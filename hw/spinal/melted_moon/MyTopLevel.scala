@@ -1,4 +1,4 @@
-package projectname
+package melted_moon
 
 import spinal.core._
 
