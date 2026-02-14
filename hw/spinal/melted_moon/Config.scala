@@ -40,7 +40,9 @@ object Config {
 
   def simWithFreq(
     clkRate: HertzNumber,
-  ) = SimConfig.withConfig(spinalWithFreq(clkRate=clkRate)).withFstWave
+  ) = {
+    SimConfig.withConfig(spinalWithFreq(clkRate=clkRate)).withFstWave
+  }
 
   //def sim = SimConfig.withConfig(spinal).withFstWave
 
@@ -56,7 +58,12 @@ object Config {
     )
       //.addStandardMemBlackboxing(blackboxAllWhatsYouCan)
   )
-  def sim = SimConfig.withConfig(spinal).withFstWave
+  def simWithCfg(
+    cfg: SpinalConfig
+  ) = {
+    SimConfig.withConfig(cfg).withFstWave
+  }
+  def sim = simWithCfg(spinal)
 
   //def spinalFormal = SpinalFormalConfig(
   //  _spinalConfig=spinal,
