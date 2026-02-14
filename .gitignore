@@ -42,6 +42,13 @@ bin/
 !tester/src/test/resources/*.vhd
 
 
+target/
+project/
 simWorkspace/
 tmp/
 null
+
+db/
+incremental_db/
+output_files/
+
