@@ -80,8 +80,8 @@ case class MeltedMoonConfig(
     //),
     instrRamKind=0,
     programStr=(
-      //"test/snowhousecpu-test-5.bin"
-      "test/snowhousecpu-framebuffer-demo.bin"
+      "test/snowhousecpu-test-5.bin"
+      //"test/snowhousecpu-framebuffer-demo.bin"
     ),
     exposeRegFileWriteDataToIo=true,
     regFileMemRamStyleAltera=(
@@ -460,9 +460,7 @@ case class MeltedMoon(
         }
       }
     )
-    myIoctlRecvFifo.io.push <-/< myIoctlRecvPushStm.last.throwWhen(
-      rIoctlPushCnt.msb
-    )
+    myIoctlRecvFifo.io.push <-/< myIoctlRecvPushStm.last
     when (myIoctlRecvPushStm.last.fire) {
       rIoctlPushCnt := rIoctlPushCnt + 1
     }
@@ -474,7 +472,7 @@ case class MeltedMoon(
     myIoctlRecvPushStm.head.addr := (
       io.ioctl_addr.resize(myIoctlRecvPushStm.head.addr.getWidth)
     )
-    io.ioctl_wait := myIoctlRecvPushStm.head.ready
+    io.ioctl_wait := !myIoctlRecvPushStm.head.ready
 
     val myIoctlRecvPopStm = cloneOf(myIoctlRecvFifo.io.pop)
     myIoctlRecvPopStm <-/< myIoctlRecvFifo.io.pop
@@ -484,10 +482,36 @@ case class MeltedMoon(
       sdramInitFifo.io.push
     )(
       dataAssignment=(outp, inp) => {
-        outp.addr := inp.addr
+        outp.addr := (
+          Cat(
+            inp.addr(
+              inp.addr.high
+              downto 2
+            ),
+            U"2'b00",
+          ).asUInt
+        )
         outp.data := inp.data
         outp.isWrite := True
-        outp.byteEn := U(outp.byteEn.getWidth bits, default -> True)
+        when (
+          inp.addr(2)
+          === RegNextWhen(
+            myIoctlRecvPopStm.addr(2),
+            cond=myIoctlRecvPopStm.fire,
+            init=myIoctlRecvPopStm.addr(2).getZero
+          )
+          //|| !History[Bool](
+          //  that=True,
+          //  when=myIoctlRecvPopStm.fire,
+          //  length=2,
+          //  init=False,
+          //).last
+        ) {
+          outp.byteEn := 0xc
+        } otherwise {
+          outp.byteEn := 0x3
+        }
+        //outp.byteEn := U(outp.byteEn.getWidth bits, default -> True)
         outp.src := outp.src.getZero
 
         outp.burstCnt := outp.burstCnt.getZero
@@ -777,6 +801,7 @@ case class MeltedMoonSimDut(
         //  //)
         //  tempArr += BigInt(0)
         //}
+        tempArr += BigInt(0)
       }
       tempArr
       //for (elem <- program.outpArr.view) {
@@ -842,7 +867,7 @@ case class MeltedMoonSimDut(
     //  rRamRdAddrCnt < 0x100
     //)
     needResetMainLogic := (
-      rRamRdAddrCnt < 0x100
+      rRamRdAddrCnt < (0x800 >> 2)
     )
 
     meltedMoon.io.ioctl_download := (
@@ -867,7 +892,7 @@ case class MeltedMoonSimDut(
         }
       }
     }
-    sdramInitRam.io.rdDataPipe.ready := meltedMoon.io.ioctl_wait
+    sdramInitRam.io.rdDataPipe.ready := !meltedMoon.io.ioctl_wait
 
     //meltedMoon.io.ioctl_dout := sdramInitRam.io.rdDataPipe.data
 
