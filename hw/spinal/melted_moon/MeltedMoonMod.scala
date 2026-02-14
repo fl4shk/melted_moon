@@ -80,8 +80,8 @@ case class MeltedMoonConfig(
     //),
     instrRamKind=0,
     programStr=(
-      "test/snowhousecpu-test-5.bin"
-      //"test/snowhousecpu-framebuffer-demo.bin"
+      //"test/snowhousecpu-test-5.bin"
+      "test/snowhousecpu-framebuffer-demo.bin"
     ),
     exposeRegFileWriteDataToIo=true,
     regFileMemRamStyleAltera=(
@@ -231,7 +231,8 @@ case class MeltedMoon(
     withReset=true,//false,
     frequency=FixedFrequency(
       //25.0 MHz
-      cfg.demoCfg.vgaTimingInfo.pixelClk
+      //cfg.demoCfg.vgaTimingInfo.pixelClk
+      cfg.demoCfg.clkRate
     ),
   )
   val pixelFifo = StreamFifoCC(
@@ -257,21 +258,28 @@ case class MeltedMoon(
       //mainClkDomain
     ),
   )
+  def cpp = LcvVgaCtrl.cpp(
+    clkRate=cfg.clkRate,
+    vgaTimingInfo=cfg.demoCfg.vgaTimingInfo,
+  )
+  println(
+    s"here we go: cpp:${cpp}"
+  )
   val vgaClockingArea = new ClockingArea(vgaClkDomain) {
     val vgaCtrl = VgaCtrl(rgbConfig=cfg.demoCfg.rgbCfg)
 
     val vgaTimingInfo = cfg.demoCfg.vgaTimingInfo
-    if (vgaTimingInfo == LcvVgaTimingInfoMap.map("640x480@60")) {
-      vgaCtrl.io.timings.setAs_h640_v480_r60
-    } else if (vgaTimingInfo == LcvVgaTimingInfoMap.map("1920x1080@60")) {
-      vgaCtrl.io.timings.setAs_h1920_v1080_r60
-    } else {
+    //if (vgaTimingInfo == LcvVgaTimingInfoMap.map("640x480@60")) {
+    //  vgaCtrl.io.timings.setAs_h640_v480_r60
+    //} else if (vgaTimingInfo == LcvVgaTimingInfoMap.map("1920x1080@60")) {
+    //  vgaCtrl.io.timings.setAs_h1920_v1080_r60
+    //} else {
       // TODO: check if this works?
       vgaTimingInfo.driveSpinalVgaTimings(
         clkRate=cfg.clkRate,
         spinalVgaTimings=vgaCtrl.io.timings,
       )
-    }
+    //}
 
     //val lcvVgaCtrl = (
     //  LcvVgaCtrl(
@@ -306,7 +314,9 @@ case class MeltedMoon(
     //)
     vgaCtrl.io.softReset := RegNext(False) init(True)
     //vgaCtrl.io.pixels <-/< myFbCtrl.io.pop
-    vgaCtrl.io.pixels <-/< pixelFifo.io.pop
+    vgaCtrl.io.pixels <-/< pixelFifo.io.pop.repeat(
+      times=cpp
+    )._1
 
     val myDoVblankIrq = Bool()
     val rSavedDoVblankIrq = Reg(Bool(), init=False)
@@ -335,12 +345,7 @@ case class MeltedMoon(
     vblankIrqFifo.io.push.valid := stickyDoVblankIrq
     vblankIrqFifo.io.push.payload := True
   }
-  val cpp = (
-    cfg.demoCfg.clkRate / cfg.demoCfg.vgaTimingInfo.pixelClk
-  ).toInt
-  println(
-    s"here we go: cpp:${cpp}"
-  )
+
   object MyIrqState
   extends SpinalEnum(defaultEncoding=binaryOneHot) {
     val
@@ -484,10 +489,7 @@ case class MeltedMoon(
       dataAssignment=(outp, inp) => {
         outp.addr := (
           Cat(
-            inp.addr(
-              inp.addr.high
-              downto 2
-            ),
+            inp.addr(inp.addr.high downto 2),
             U"2'b00",
           ).asUInt
         )
@@ -958,7 +960,8 @@ object MeltedMoonSimDutSim extends App {
     //)
     dut.meltedMoon.vgaClkDomain.forkStimulus(
       //40
-      (((1 sec) / cfg.demoCfg.vgaTimingInfo.pixelClk)) sec //ns //ms
+      //(((1 sec) / cfg.demoCfg.vgaTimingInfo.pixelClk)) sec //ns //ms
+      (((1 sec) / cfg.demoCfg.clkRate)) sec //ns //ms
     )
     for (i <- 0 until numClkCycles) {
       dut.clockDomain.waitSampling()
@@ -988,7 +991,7 @@ object MeltedMoonSimDutSim extends App {
 object MeltedMoonToVerilog extends App {
   val cfg = MeltedMoonConfig(
     sdramCtrlUseAltddioOut=(
-      false
+      true
     ),
   )
   Config.spinalWithFreq(clkRate=cfg.clkRate).generateVerilog{

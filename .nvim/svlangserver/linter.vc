@@ -4,6 +4,8 @@
 +incdir+/media/other_data/fl4shk_home_stuff/Documents/dev/electronics/spinalhdl/projects/melted_moon/hw/gen
 +incdir+/media/other_data/fl4shk_home_stuff/Documents/dev/electronics/spinalhdl/projects/melted_moon/rtl
 +incdir+/media/other_data/fl4shk_home_stuff/Documents/dev/electronics/spinalhdl/projects/melted_moon/rtl/pll
++incdir+/media/other_data/fl4shk_home_stuff/Documents/dev/electronics/spinalhdl/projects/melted_moon/simWorkspace/MeltedMoonSimDut/rtl
++incdir+/media/other_data/fl4shk_home_stuff/Documents/dev/electronics/spinalhdl/projects/melted_moon/simWorkspace/tmp/job_1
 +incdir+/media/other_data/fl4shk_home_stuff/Documents/dev/electronics/spinalhdl/projects/melted_moon/submodules/libsnowhouse/submodules/libcheesevoyage/hw/gen
 +incdir+/media/other_data/fl4shk_home_stuff/Documents/dev/electronics/spinalhdl/projects/melted_moon/submodules/libsnowhouse/submodules/libcheesevoyage/hw/verilog
 +incdir+/media/other_data/fl4shk_home_stuff/Documents/dev/electronics/spinalhdl/projects/melted_moon/submodules/libsnowhouse/submodules/libcheesevoyage
@@ -20,6 +22,8 @@
 +incdir+/media/other_data/fl4shk_home_stuff/Documents/dev/electronics/spinalhdl/projects/melted_moon/hw/gen
 +incdir+/media/other_data/fl4shk_home_stuff/Documents/dev/electronics/spinalhdl/projects/melted_moon/rtl
 +incdir+/media/other_data/fl4shk_home_stuff/Documents/dev/electronics/spinalhdl/projects/melted_moon/rtl/pll
++incdir+/media/other_data/fl4shk_home_stuff/Documents/dev/electronics/spinalhdl/projects/melted_moon/simWorkspace/MeltedMoonSimDut/rtl
++incdir+/media/other_data/fl4shk_home_stuff/Documents/dev/electronics/spinalhdl/projects/melted_moon/simWorkspace/tmp/job_1
 +incdir+/media/other_data/fl4shk_home_stuff/Documents/dev/electronics/spinalhdl/projects/melted_moon/submodules/libsnowhouse/submodules/libcheesevoyage/hw/gen
 +incdir+/media/other_data/fl4shk_home_stuff/Documents/dev/electronics/spinalhdl/projects/melted_moon/submodules/libsnowhouse/submodules/libcheesevoyage/hw/verilog
 +incdir+/media/other_data/fl4shk_home_stuff/Documents/dev/electronics/spinalhdl/projects/melted_moon/submodules/libsnowhouse/submodules/libcheesevoyage

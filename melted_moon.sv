@@ -276,7 +276,19 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(IOCTL_WIDE)) hps_io
 	.status_menumask({status[5]}),
 	
 	.ps2_key(ps2_key),
-	.*
+  .ioctl_download(ioctl_download),
+  .ioctl_index(ioctl_index),
+  .ioctl_wr(ioctl_wr),
+  .ioctl_addr(ioctl_addr),
+  .ioctl_dout(ioctl_dout),
+  .ioctl_upload(ioctl_upload),
+  .ioctl_upload_req(ioctl_upload_req),
+  .ioctl_upload_index(ioctl_upload_index),
+  .ioctl_din(ioctl_din),
+  .ioctl_rd(ioctl_rd),
+  .ioctl_file_ext(ioctl_file_ext),
+  .ioctl_wait(ioctl_wait)
+	//.*
 );
 
 ///////////////////////   CLOCKS   ///////////////////////////////
@@ -286,42 +298,75 @@ wire clk_sys;
 //assign clk_sys = CLK_50M;
 //assign clk_cpu = CLK_50M;
 //assign clk_cpu = clk_sys;
+//wire vgaClk_clk;
 pll pll
 (
 	.refclk(CLK_50M),
 	.rst(0),
-	.outclk_0(clk_sys)
-	//.outclk_1(clk_cpu)
+	.outclk_0(clk_sys)//,
+	//.outclk_1(
+	//  //clk_cpu
+	//  vgaClk_clk
+	//)
 );
 
 wire reset = RESET | status[0] | buttons[1];
 
 wire [1:0] col = status[4:3];
 
-wire HBlank;
-wire HSync;
-wire VBlank;
-wire VSync;
-wire ce_pix;
-wire [7:0] video;
+//wire HBlank;
+//wire HSync;
+//wire VBlank;
+//wire VSync;
+//wire ce_pix;
+//wire [7:0] video;
 
 melted_moon my_melted_moon
 (
 	.clk(clk_sys),
+	//.vgaClk_clk(vgaClk_clk),
 	//.clk_cpu(clk_cpu),
 	.reset(reset),
 	
 	.pal(status[2]),
 	.scandouble(forced_scandoubler),
 
-	.ce_pix(ce_pix),
+	//.ce_pix(ce_pix),
 
-	.HBlank(HBlank),
-	.HSync(HSync),
-	.VBlank(VBlank),
-	.VSync(VSync),
+	//.HBlank(HBlank),
+	//.HSync(HSync),
+	//.VBlank(VBlank),
+	//.VSync(VSync),
 
-	.video(video),
+	//.video(video),
+
+  .vgaPhys_col_r(VGA_R),
+  .vgaPhys_col_g(VGA_G),
+  .vgaPhys_col_b(VGA_B),
+  .vgaPhys_hsync(VGA_HS),
+  .vgaPhys_vsync(VGA_VS),
+  .vgaPixelEn(CE_PIXEL),
+  .vgaVisib(VGA_DE),
+
+	// ARM -> FPGA download
+	.ioctl_download(ioctl_download),
+	  // signal indicating an active download
+	.ioctl_index(ioctl_index),
+	  // menu index used to upload the file
+	.ioctl_wr(ioctl_wr),
+	.ioctl_addr(ioctl_addr),
+	  // in WIDE mode address will be incremented by 2
+	.ioctl_dout(ioctl_dout),
+	.ioctl_upload(ioctl_upload),
+	  // signal indicating an active upload
+
+	.ioctl_upload_req(ioctl_upload_req),
+	  // request to save (must be supported on HPS side for specific core)
+	.ioctl_upload_index(ioctl_upload_index),
+	.ioctl_din(ioctl_din),
+	.ioctl_rd(ioctl_rd),
+	.ioctl_file_ext(ioctl_file_ext),
+	.ioctl_wait(ioctl_wait),
 
 	.sdram_CLK(SDRAM_CLK),
 	.sdram_CKE(SDRAM_CKE),
@@ -337,19 +382,19 @@ melted_moon my_melted_moon
 );
 
 assign CLK_VIDEO = clk_sys;
-assign CE_PIXEL = ce_pix;
+//assign CE_PIXEL = ce_pix;
 
 
-assign VGA_DE = ~(HBlank | VBlank);
-assign VGA_HS = HSync;
-assign VGA_VS = VSync;
-assign VGA_G  = (!col || col == 2) ? video : 8'd0;
-assign VGA_R  = (!col || col == 1) ? video : 8'd0;
-assign VGA_B  = (!col || col == 3) ? video : 8'd0;
-
-reg  [26:0] act_cnt;
-always @(posedge clk_sys) act_cnt <= act_cnt + 1'd1; 
-assign LED_USER    = act_cnt[26]  ? act_cnt[25:18]  > act_cnt[7:0]  : act_cnt[25:18]  <= act_cnt[7:0];
+//assign VGA_DE = ~(HBlank | VBlank);
+//assign VGA_HS = HSync;
+//assign VGA_VS = VSync;
+////assign VGA_G  = (!col || col == 2) ? video : 8'd0;
+////assign VGA_R  = (!col || col == 1) ? video : 8'd0;
+////assign VGA_B  = (!col || col == 3) ? video : 8'd0;
+//
+//reg  [26:0] act_cnt;
+//always @(posedge clk_sys) act_cnt <= act_cnt + 1'd1; 
+//assign LED_USER    = act_cnt[26]  ? act_cnt[25:18]  > act_cnt[7:0]  : act_cnt[25:18]  <= act_cnt[7:0];
 
 //localparam ARCVID_WIDTH = 320;
 //localparam ARCVID_DW = 24;

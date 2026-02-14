@@ -404,19 +404,6 @@ set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[23] -
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[25] -to auto_signaltap_0|vcc -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[27] -to auto_signaltap_0|vcc -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[29] -to auto_signaltap_0|vcc -section_id auto_signaltap_0
-set_global_assignment -name VERILOG_FILE ../../../../../dev/electronics/spinalhdl/projects/melted_moon/hw/gen/LcvBusNonCoherentDataCacheWithSdramCtrl.v
-set_global_assignment -name SYSTEMVERILOG_FILE ../../../../../dev/electronics/spinalhdl/projects/melted_moon/submodules/libsnowhouse/submodules/libcheesevoyage/hw/verilog/LcvMulAcc.sv
-set_global_assignment -name CDF_FILE jtag.cdf
-set_global_assignment -name QIP_FILE sys/sys.qip
-set_global_assignment -name VERILOG_FILE rtl/lfsr.v
-set_global_assignment -name SYSTEMVERILOG_FILE rtl/cos.sv
-set_global_assignment -name SYSTEMVERILOG_FILE rtl/melted_moon.v
-set_global_assignment -name SDC_FILE melted_moon.sdc
-set_global_assignment -name SYSTEMVERILOG_FILE melted_moon.sv
-set_global_assignment -name SOURCE_FILE db/melted_moon.cmp.rdb
-set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
-set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
-set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[0] -to "emu:emu|melted_moon:my_melted_moon|LcvBusNonCoherentDataCacheWithSdramCtrl:cacheTesterWithSdramCtrl|LcvBusDeviceRamTester:myCacheTester|LcvBusDeviceRamTesterNonCoherent:nonCoherentInnerTesterArea_nonCoherentInnerTester|rRecvCmpDataRandAddr_recvDataVec_0[0]" -section_id auto_signaltap_0
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[1] -to "emu:emu|melted_moon:my_melted_moon|LcvBusNonCoherentDataCacheWithSdramCtrl:cacheTesterWithSdramCtrl|LcvBusDeviceRamTester:myCacheTester|LcvBusDeviceRamTesterNonCoherent:nonCoherentInnerTesterArea_nonCoherentInnerTester|rRecvCmpDataRandAddr_recvDataVec_0[10]" -section_id auto_signaltap_0
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[2] -to "emu:emu|melted_moon:my_melted_moon|LcvBusNonCoherentDataCacheWithSdramCtrl:cacheTesterWithSdramCtrl|LcvBusDeviceRamTester:myCacheTester|LcvBusDeviceRamTesterNonCoherent:nonCoherentInnerTesterArea_nonCoherentInnerTester|rRecvCmpDataRandAddr_recvDataVec_0[11]" -section_id auto_signaltap_0
@@ -974,5 +961,18 @@ set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[24] -
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[26] -to auto_signaltap_0|vcc -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[28] -to auto_signaltap_0|vcc -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[31] -to auto_signaltap_0|vcc -section_id auto_signaltap_0
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name VERILOG_FILE ../../../../../dev/electronics/spinalhdl/projects/melted_moon/hw/gen/MeltedMoon.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../../../../../dev/electronics/spinalhdl/projects/melted_moon/submodules/libsnowhouse/submodules/libcheesevoyage/hw/verilog/LcvMulAcc.sv
+set_global_assignment -name CDF_FILE jtag.cdf
+set_global_assignment -name QIP_FILE sys/sys.qip
+set_global_assignment -name VERILOG_FILE rtl/lfsr.v
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/cos.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/melted_moon.v
+set_global_assignment -name SDC_FILE melted_moon.sdc
+set_global_assignment -name SYSTEMVERILOG_FILE melted_moon.sv
+set_global_assignment -name SOURCE_FILE db/melted_moon.cmp.rdb
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name SLD_FILE db/stp2_auto_stripped.stp
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
