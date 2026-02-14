@@ -201,7 +201,14 @@ case class MeltedMoon(
   val io = MeltedMoonIo(cfg=cfg)
   noIoPrefix()
   //--------
-  val vgaClockDomain = ClockDomain.external(
+  val ioctlClkDomain = ClockDomain.external(
+    name="ioctlClk",
+    withReset=true,
+    frequency=FixedFrequency(
+      cfg.demoCfg.clkRate
+    )
+  )
+  val vgaClkDomain = ClockDomain.external(
     name="vgaClk",
     withReset=true,//false,
     frequency=FixedFrequency(
@@ -216,17 +223,17 @@ case class MeltedMoon(
       16
     ),
     pushClock=ClockDomain.current,
-    popClock=vgaClockDomain,
+    popClock=vgaClkDomain,
   )
   val vblankIrqFifo = StreamFifoCC(
     dataType=Bool(),
     depth=(
       4
     ),
-    pushClock=vgaClockDomain,
+    pushClock=vgaClkDomain,
     popClock=ClockDomain.current,
   )
-  val vgaClockingArea = new ClockingArea(vgaClockDomain) {
+  val vgaClockingArea = new ClockingArea(vgaClkDomain) {
     val vgaCtrl = VgaCtrl(rgbConfig=cfg.demoCfg.rgbCfg)
 
     val vgaTimingInfo = cfg.demoCfg.vgaTimingInfo
@@ -395,11 +402,6 @@ case class MeltedMoon(
     }
   }
   //--------
-  io.ioctl_upload_req := False
-  io.ioctl_upload_index := 0x0
-  io.ioctl_din := 0x0
-  //io.ioctl_wait := False
-  //--------
   val mySdramCtrl = LcvBusSdramCtrl(
     cfg=cfg.sdramCtrlCfg
   )
@@ -550,118 +552,138 @@ case class MeltedMoon(
 
   //myFbDbusSlicer
   //val myCpuCacheSdramCtrlBusArbiter
-
-  case class MyIoctlPayload(
-    dataWidth: Int,
-  ) extends Bundle {
-    val addr = (
-      //cloneOf(io.ioctl_addr)
-      UInt(cfg.sdramCtrlCfg.busCfg.addrWidth bits)
-    )
-    val data = UInt(dataWidth bits)
-  }
-  val myIoctlRecvFifo = StreamFifo(
-    dataType=MyIoctlPayload(
-      cfg.sdramCtrlCfg.busCfg.dataWidth
-      //cfg.ioctlSpinalDw bits
+  //--------
+  //--------
+  val sdramInitFifo = StreamFifoCC(
+    dataType=cloneOf(mySdramCtrlIoctlHost.h2dBus.payload),
+    depth=(
+      32,
     ),
-    depth=8,
-    latency=2,
-    forFMax=true,
+    pushClock=ioctlClkDomain,
+    popClock=ClockDomain.current,
   )
-  val myIoctlRecvPushStm = (
-    Vec[Stream[MyIoctlPayload]](
-      List[Stream[MyIoctlPayload]](
-        Stream(MyIoctlPayload(cfg.ioctlSpinalDw)),
-        Stream(MyIoctlPayload(cfg.sdramCtrlCfg.busCfg.dataWidth)),
+  val ioctlClockingArea = new ClockingArea(ioctlClkDomain) {
+    io.ioctl_upload_req := False
+    io.ioctl_upload_index := 0x0
+    io.ioctl_din := 0x0
+    //io.ioctl_wait := False
+
+    case class MyIoctlPayload(
+      dataWidth: Int,
+    ) extends Bundle {
+      val addr = (
+        //cloneOf(io.ioctl_addr)
+        UInt(cfg.sdramCtrlCfg.busCfg.addrWidth bits)
       )
-    )
-    //cloneOf(myIoctlRecvFifo.io.push)
-    //Stream(
-    //  UInt(
-    //    cfg.sdramCtrlCfg.busCfg.dataWidth bits
-    //    //cfg.ioctlSpinalDw bits
-    //  )
-    //)
-  )
-  val rIoctlPushCnt = (
-    Reg(UInt(
-      //1 bits
-      log2Up(
+      val data = UInt(dataWidth bits)
+    }
+
+    val myIoctlRecvFifo = StreamFifo(
+      dataType=MyIoctlPayload(
         cfg.sdramCtrlCfg.busCfg.dataWidth
-        / cfg.ioctlSpinalDw
-      ).toInt
-      bits
-    )) init(0x0)
-  )
-  myIoctlRecvPushStm.head.translateInto(myIoctlRecvPushStm.last)(
-    dataAssignment=(outp, inp) => {
-      outp.addr := inp.addr
-      outp.data := outp.data.getZero
-      switch (rIoctlPushCnt) {
-        for (idx <- 0 until (1 << rIoctlPushCnt.getWidth)) {
-          is (idx) {
-            println(
-              (idx + 1) * inp.data.getWidth - 1
-              downto idx * inp.data.getWidth
-            )
-            outp.data(
-              (idx + 1) * inp.data.getWidth - 1
-              downto idx * inp.data.getWidth
-            ) := inp.data
+        //cfg.ioctlSpinalDw bits
+      ),
+      depth=8,
+      latency=2,
+      forFMax=true,
+    )
+    val myIoctlRecvPushStm = (
+      Vec[Stream[MyIoctlPayload]](
+        List[Stream[MyIoctlPayload]](
+          Stream(MyIoctlPayload(cfg.ioctlSpinalDw)),
+          Stream(MyIoctlPayload(cfg.sdramCtrlCfg.busCfg.dataWidth)),
+        )
+      )
+      //cloneOf(myIoctlRecvFifo.io.push)
+      //Stream(
+      //  UInt(
+      //    cfg.sdramCtrlCfg.busCfg.dataWidth bits
+      //    //cfg.ioctlSpinalDw bits
+      //  )
+      //)
+    )
+    val rIoctlPushCnt = (
+      Reg(UInt(
+        //1 bits
+        log2Up(
+          cfg.sdramCtrlCfg.busCfg.dataWidth
+          / cfg.ioctlSpinalDw
+        ).toInt
+        bits
+      )) init(0x0)
+    )
+    myIoctlRecvPushStm.head.translateInto(myIoctlRecvPushStm.last)(
+      dataAssignment=(outp, inp) => {
+        outp.addr := inp.addr
+        outp.data := outp.data.getZero
+        switch (rIoctlPushCnt) {
+          for (idx <- 0 until (1 << rIoctlPushCnt.getWidth)) {
+            is (idx) {
+              println(
+                (idx + 1) * inp.data.getWidth - 1
+                downto idx * inp.data.getWidth
+              )
+              outp.data(
+                (idx + 1) * inp.data.getWidth - 1
+                downto idx * inp.data.getWidth
+              ) := inp.data
+            }
           }
         }
       }
+    )
+    myIoctlRecvFifo.io.push <-/< myIoctlRecvPushStm.last.throwWhen(
+      !rIoctlPushCnt.msb
+    )
+    when (myIoctlRecvPushStm.last.fire) {
+      rIoctlPushCnt := rIoctlPushCnt + 1
     }
-  )
-  myIoctlRecvFifo.io.push <-/< myIoctlRecvPushStm.last.throwWhen(
-    !rIoctlPushCnt.msb
-  )
-  when (myIoctlRecvPushStm.last.fire) {
-    rIoctlPushCnt := rIoctlPushCnt + 1
+    myIoctlRecvPushStm.head.valid := (
+      //io.ioctl_upload 
+      io.ioctl_wr && io.ioctl_download
+    )
+    myIoctlRecvPushStm.head.data := io.ioctl_dout
+    myIoctlRecvPushStm.head.addr := (
+      io.ioctl_addr.resize(myIoctlRecvPushStm.head.addr.getWidth)
+    )
+    io.ioctl_wait := myIoctlRecvPushStm.head.ready
+
+    val myIoctlRecvPopStm = cloneOf(myIoctlRecvFifo.io.pop)
+    myIoctlRecvPopStm <-/< myIoctlRecvFifo.io.pop
+    myIoctlRecvPopStm.translateInto(
+      //mySdramCtrlBusArbiter.io.hostVec.head.h2dBus
+      //mySdramCtrlIoctlHost.h2dBus
+      sdramInitFifo.io.push
+    )(
+      dataAssignment=(outp, inp) => {
+        outp.addr := inp.addr
+        outp.data := inp.data
+        outp.isWrite := True
+        outp.byteEn := U(outp.byteEn.getWidth bits, default -> True)
+        outp.src := outp.src.getZero
+
+        outp.burstCnt := outp.burstCnt.getZero
+        outp.burstFirst := False
+        outp.burstLast := False
+      }
+    )
+    //mySdramCtrlIoctlHost.d2hBus.ready := False
+    //mySdramCtrlBusArbiter.io.hostVec.head.d2hBus.ready := True
+
+    //mySdramCtrlBusArbiter.io.hostVec(1).h2dBus.valid := False
+    //mySdramCtrlBusArbiter.io.hostVec(1).h2dBus.payload := (
+    //  mySdramCtrlBusArbiter.io.hostVec(1).h2dBus.payload.getZero
+    //)
+    //mySdramCtrlBusArbiter.io.hostVec(1).d2hBus.ready := False
+
+    //mySdramCtrlBusArbiter.io.hostVec.last.h2dBus.valid := False
+    //mySdramCtrlBusArbiter.io.hostVec.last.h2dBus.payload := (
+    //  mySdramCtrlBusArbiter.io.hostVec.last.h2dBus.payload.getZero
+    //)
+    //mySdramCtrlBusArbiter.io.hostVec.last.d2hBus.ready := False
   }
-  myIoctlRecvPushStm.head.valid := (
-    //io.ioctl_upload 
-    io.ioctl_wr && io.ioctl_download
-  )
-  myIoctlRecvPushStm.head.data := io.ioctl_dout
-  myIoctlRecvPushStm.head.addr := (
-    io.ioctl_addr.resize(myIoctlRecvPushStm.head.addr.getWidth)
-  )
-  io.ioctl_wait := myIoctlRecvPushStm.head.ready
-
-  val myIoctlRecvPopStm = cloneOf(myIoctlRecvFifo.io.pop)
-  myIoctlRecvPopStm <-/< myIoctlRecvFifo.io.pop
-  myIoctlRecvPopStm.translateInto(
-    //mySdramCtrlBusArbiter.io.hostVec.head.h2dBus
-    mySdramCtrlIoctlHost.h2dBus
-  )(
-    dataAssignment=(outp, inp) => {
-      outp.addr := inp.addr
-      outp.data := inp.data
-      outp.isWrite := True
-      outp.byteEn := U(outp.byteEn.getWidth bits, default -> True)
-      outp.src := outp.src.getZero
-
-      outp.burstCnt := outp.burstCnt.getZero
-      outp.burstFirst := False
-      outp.burstLast := False
-    }
-  )
-  mySdramCtrlIoctlHost.d2hBus.ready := False
-  //mySdramCtrlBusArbiter.io.hostVec.head.d2hBus.ready := True
-
-  //mySdramCtrlBusArbiter.io.hostVec(1).h2dBus.valid := False
-  //mySdramCtrlBusArbiter.io.hostVec(1).h2dBus.payload := (
-  //  mySdramCtrlBusArbiter.io.hostVec(1).h2dBus.payload.getZero
-  //)
-  //mySdramCtrlBusArbiter.io.hostVec(1).d2hBus.ready := False
-
-  //mySdramCtrlBusArbiter.io.hostVec.last.h2dBus.valid := False
-  //mySdramCtrlBusArbiter.io.hostVec.last.h2dBus.payload := (
-  //  mySdramCtrlBusArbiter.io.hostVec.last.h2dBus.payload.getZero
-  //)
-  //mySdramCtrlBusArbiter.io.hostVec.last.d2hBus.ready := False
+  mySdramCtrlIoctlHost.h2dBus <-/< sdramInitFifo.io.pop
+  mySdramCtrlIoctlHost.d2hBus.ready := True
 }
 
 case class MeltedMoonSimDutIo(
@@ -733,13 +755,13 @@ object MeltedMoonSimDutSim extends App {
       //((1e9) / demoCfg.clkRate)
       (((1 sec) / cfg.demoCfg.clkRate)) sec //ns //ms
     )
-    dut.meltedMoon.vgaClockDomain.forkStimulus(
+    dut.meltedMoon.vgaClkDomain.forkStimulus(
       //40
       (((1 sec) / cfg.demoCfg.vgaTimingInfo.pixelClk)) sec //ns //ms
     )
     for (i <- 0 until numClkCycles) {
       dut.clockDomain.waitSampling()
-      dut.meltedMoon.vgaClockDomain.waitSampling()
+      dut.meltedMoon.vgaClkDomain.waitSampling()
       //var tickVgaClk: Boolean = false
       //if (
       //  (
@@ -751,14 +773,13 @@ object MeltedMoonSimDutSim extends App {
       //  ) == 0
       //) {
       //  tickVgaClk = true
-      //  dut.vgaClockDomain.waitSampling()
+      //  dut.vgaClkDomain.waitSampling()
       //}
       //println(
       //  s"i:${i}, tickVgaClk:${tickVgaClk}"
       //)
     }
   }}
-
 }
 
 object MeltedMoonToVerilog extends App {
