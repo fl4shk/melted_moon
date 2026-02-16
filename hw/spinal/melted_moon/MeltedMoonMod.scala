@@ -78,12 +78,19 @@ case class MeltedMoonConfig(
     //  //false
     //  true
     //),
+    optMainAddrWidth=(
+      Some(25)
+    ),
     instrRamKind=0,
     programStr=(
       //"test/snowhousecpu-test-5.bin"
       "test/snowhousecpu-framebuffer-demo.bin"
     ),
-    exposeRegFileWriteDataToIo=true,
+    //exposeRegFileWriteDataToIo=true,
+    optTwoCycleRegFileReads=(
+      //true
+      false
+    ),
     regFileMemRamStyleAltera=(
       //"no_rw_check, logic"
       "no_rw_check, MLAB"
@@ -97,9 +104,10 @@ case class MeltedMoonConfig(
       "no_rw_check, M10K"
     ),
     icacheLineAttrsMemRamStyleAltera=(
-      //"no_rw_check, MLAB"
+      "no_rw_check, MLAB"
       //"no_rw_check, logic"
-      "no_rw_check, M10K"
+      //"no_rw_check, M10K"
+      //"no_rw_check, MLAB"
     ),
     dcacheLineWordMemRamStyleAltera=(
       //"no_rw_check, MLAB"
@@ -226,37 +234,47 @@ case class MeltedMoon(
   //mainClkDomain.clock := ClockDomain.current.readClockWire
   //mainClkDomain.reset := io.mainLogicReset
 
-  val vgaClkDomain = ClockDomain.external(
-    name="vgaClk",
-    withReset=true,//false,
-    frequency=FixedFrequency(
-      //25.0 MHz
-      //cfg.demoCfg.vgaTimingInfo.pixelClk
-      cfg.demoCfg.clkRate
-    ),
+  val vgaClkDomain = ClockDomain.current
+  //val vgaClkDomain = ClockDomain.external(
+  //  name="vgaClk",
+  //  withReset=true,//false,
+  //  frequency=FixedFrequency(
+  //    //25.0 MHz
+  //    //cfg.demoCfg.vgaTimingInfo.pixelClk
+  //    cfg.demoCfg.clkRate
+  //  ),
+  //)
+  //val pixelFifo = StreamFifo/*CC*/(
+  //  dataType=Rgb(cfg.demoCfg.rgbCfg),
+  //  depth=(
+  //    //io.misc.fifoDepth
+  //    16
+  //  ),
+  //  latency=2,
+  //  forFMax=true,
+  //  //pushClock=(
+  //  //  ClockDomain.current
+  //  //  //mainClkDomain
+  //  //),
+  //  //popClock=vgaClkDomain,
+  //)
+
+  val myPixelPushStm = (
+    //cloneOf(pixelFifo.io.push)
+    Stream(Rgb(cfg.demoCfg.rgbCfg))
   )
-  val pixelFifo = StreamFifoCC(
-    dataType=Rgb(cfg.demoCfg.rgbCfg),
-    depth=(
-      //io.misc.fifoDepth
-      16
-    ),
-    pushClock=(
-      ClockDomain.current
-      //mainClkDomain
-    ),
-    popClock=vgaClkDomain,
-  )
-  val vblankIrqFifo = StreamFifoCC(
+  val vblankIrqFifo = StreamFifo/*CC*/(
     dataType=Bool(),
     depth=(
       4
     ),
-    pushClock=vgaClkDomain,
-    popClock=(
-      ClockDomain.current
-      //mainClkDomain
-    ),
+    latency=2,
+    forFMax=true,
+    //pushClock=vgaClkDomain,
+    //popClock=(
+    //  ClockDomain.current
+    //  //mainClkDomain
+    //),
   )
   def cpp = LcvVgaCtrl.cpp(
     clkRate=cfg.clkRate,
@@ -266,57 +284,105 @@ case class MeltedMoon(
     s"here we go: cpp:${cpp}"
   )
   val vgaClockingArea = new ClockingArea(vgaClkDomain) {
-    val vgaCtrl = VgaCtrl(rgbConfig=cfg.demoCfg.rgbCfg)
+    //val vgaCtrl = VgaCtrl(rgbConfig=cfg.demoCfg.rgbCfg)
 
     val vgaTimingInfo = cfg.demoCfg.vgaTimingInfo
-    //if (vgaTimingInfo == LcvVgaTimingInfoMap.map("640x480@60")) {
-    //  vgaCtrl.io.timings.setAs_h640_v480_r60
-    //} else if (vgaTimingInfo == LcvVgaTimingInfoMap.map("1920x1080@60")) {
-    //  vgaCtrl.io.timings.setAs_h1920_v1080_r60
-    //} else {
-      // TODO: check if this works?
-      vgaTimingInfo.driveSpinalVgaTimings(
-        clkRate=cfg.clkRate,
-        spinalVgaTimings=vgaCtrl.io.timings,
-      )
-    //}
-
-    //val lcvVgaCtrl = (
-    //  LcvVgaCtrl(
-    //    clkRate=cfg.clkRate,
-    //    //rgbConfig=physRgbConfig,
-    //    rgbConfig=cfg.rgbCfg,
-    //    vgaTimingInfo=cfg.vgaTimingInfo,
-    //    fifoDepth=(
-    //      //cfg.ctrlFifoDepth
-    //      io.misc.fifoDepth
+    ////if (vgaTimingInfo == LcvVgaTimingInfoMap.map("640x480@60")) {
+    ////  vgaCtrl.io.timings.setAs_h640_v480_r60
+    ////} else if (vgaTimingInfo == LcvVgaTimingInfoMap.map("1920x1080@60")) {
+    ////  vgaCtrl.io.timings.setAs_h1920_v1080_r60
+    ////} else {
+    //  // TODO: check if this works?
+    //  vgaTimingInfo.driveSpinalVgaTimings(
+    //    clkRate=(
+    //      cfg.clkRate
     //    ),
+    //    spinalVgaTimings=vgaCtrl.io.timings,
+    //  )
+    ////}
+
+    val lcvVgaCtrl = (
+      LcvVgaCtrl(
+        clkRate=cfg.clkRate,
+        //rgbConfig=physRgbConfig,
+        rgbConfig=cfg.demoCfg.rgbCfg,
+        vgaTimingInfo=cfg.demoCfg.vgaTimingInfo,
+        fifoDepth=(
+          //cfg.ctrlFifoDepth
+          //io.misc.fifoDepth
+          32
+        ),
+      )
+    )
+    //io.vgaPhys := (
+    //  RegNext(
+    //    lcvVgaCtrl.io.phys,
+    //    init=lcvVgaCtrl.io.phys.getZero,
     //  )
     //)
-    //io.phys := lcvVgaCtrl.io.phys
     //io.misc := lcvVgaCtrl.io.misc
-    //lcvVgaCtrl.io.en := True
+    //io.vgaVisib := (
+    //  RegNext(
+    //    lcvVgaCtrl.io.misc.visib,
+    //    init=lcvVgaCtrl.io.misc.visib.getZero,
+    //  )
+    //)
+    //io.vgaPixelEn := (
+    //  RegNext(
+    //    lcvVgaCtrl.io.misc.pixelEn,
+    //    init=lcvVgaCtrl.io.misc.pixelEn.getZero,
+    //  )
+    //)
+    io.vgaPhys.setAsReg() init(io.vgaPhys.getZero)
+    io.vgaVisib.setAsReg() init(io.vgaVisib.getZero)
+    io.vgaPixelEn.setAsReg() init(io.vgaPixelEn.getZero)
 
-    //--------
-    when (vgaCtrl.io.vga.colorEn) {
-      io.vgaPhys.col := vgaCtrl.io.vga.color
+    io.vgaPhys := lcvVgaCtrl.io.phys
+    io.vgaVisib := lcvVgaCtrl.io.misc.visib
+    io.vgaPixelEn := lcvVgaCtrl.io.misc.pixelEn
+
+    val mySeenPixelPushStmValid = Bool()
+    val rSavedSeenPixelPushStmValid = Reg(Bool(), init=False)
+    val stickySeenMyPixelPushStmValid = (
+      mySeenPixelPushStmValid
+      || rSavedSeenPixelPushStmValid
+    )
+    mySeenPixelPushStmValid := myPixelPushStm.valid
+    when (mySeenPixelPushStmValid) {
+      rSavedSeenPixelPushStmValid := True
+    }
+
+    lcvVgaCtrl.io.en := stickySeenMyPixelPushStmValid
+    lcvVgaCtrl.io.push << myPixelPushStm
+    when (lcvVgaCtrl.io.misc.visib) {
+      io.vgaPhys.col := lcvVgaCtrl.io.phys.col
     } otherwise {
       io.vgaPhys.col := io.vgaPhys.col.getZero
     }
-    io.vgaPhys.hsync := vgaCtrl.io.vga.hSync
-    io.vgaPhys.vsync := vgaCtrl.io.vga.vSync
-    //io.misc := io.misc.getZero
-    //io.misc.allowOverride
-    //io.misc.pastVisib := RegNext(io.misc.visib) init(False)
-    io.vgaVisib := vgaCtrl.io.vga.colorEn
-    //io.misc.pixelEn := (
-    //  True
-    //)
-    vgaCtrl.io.softReset := RegNext(False) init(True)
-    //vgaCtrl.io.pixels <-/< myFbCtrl.io.pop
-    vgaCtrl.io.pixels <-/< pixelFifo.io.pop.repeat(
-      times=cpp
-    )._1
+
+    //--------
+    //when (vgaCtrl.io.vga.colorEn) {
+    //  io.vgaPhys.col := vgaCtrl.io.vga.color
+    //} otherwise {
+    //  io.vgaPhys.col := io.vgaPhys.col.getZero
+    //}
+    //io.vgaPhys.hsync := vgaCtrl.io.vga.hSync
+    //io.vgaPhys.vsync := vgaCtrl.io.vga.vSync
+    ////io.misc := io.misc.getZero
+    ////io.misc.allowOverride
+    ////io.misc.pastVisib := RegNext(io.misc.visib) init(False)
+    //io.vgaVisib := vgaCtrl.io.vga.colorEn
+    ////io.misc.pixelEn := (
+    ////  True
+    ////)
+    //vgaCtrl.io.softReset := RegNext(False) init(True)
+    ////vgaCtrl.io.pixels <-/< myFbCtrl.io.pop
+    ////vgaCtrl.io.pixels << pixelFifo.io.pop.repeat(
+    ////  times=cpp
+    ////)._1
+    //vgaCtrl.io.pixels << myPixelPushStm.repeat(
+    //  times=cpp
+    //)._1
 
     val myDoVblankIrq = Bool()
     val rSavedDoVblankIrq = Reg(Bool(), init=False)
@@ -539,25 +605,33 @@ case class MeltedMoon(
     mySdramCtrlIoctlHost.d2hBus.ready := True
   }
 
+  //val rPixelEnCnt = Reg(UInt(
+  //  log2Up(cpp) bits
+  //))
+  //io.vgaPixelEn := (
+  //  rPixelEnCnt === cpp - 1
+  //)
+  ////when (
+  ////  vgaClockingArea.vgaCtrl.io.pixels.fire
+  ////  || !vgaClockingArea.vgaCtrl.io.pixels.ready
+  ////) {
+  //  when (rPixelEnCnt < cpp - 1) {
+  //    rPixelEnCnt := rPixelEnCnt + 1
+  //  } otherwise {
+  //    rPixelEnCnt := 0x0
+  //  }
+  ////}
+
   val main = new ResetArea(io.mainLogicReset, false) {
-    val rPixelEnCnt = Reg(UInt(
-      log2Up(cpp) bits
-    ))
-    io.vgaPixelEn := (
-      rPixelEnCnt === cpp - 1
-    )
-    when (rPixelEnCnt < cpp - 1) {
-      rPixelEnCnt := rPixelEnCnt + 1
-    } otherwise {
-      rPixelEnCnt := 0x0
-    }
     val myFbCtrl = LcvBusFramebufferCtrl(
       cfg=(
         cfg.demoCfg.myFbCfg
         //myDbgFbCfg
       )
     )
-    pixelFifo.io.push <-/< myFbCtrl.io.pop
+    //myFbCtrl.io.pop.ready := True
+    //pixelFifo.io.push <-/< myFbCtrl.io.pop
+    myPixelPushStm <-/< myFbCtrl.io.pop
     //--------
     val cpu = SnowHouseCpuWithoutRam(program=cfg.testProgram.program)
 
@@ -631,8 +705,32 @@ case class MeltedMoon(
     def myDcacheArrIdxFb = 0
     def myDcacheArrIdxNonFb = 1
     def limMyDcacheArrIdx = 2
-    val dcacheArr = Array.fill(limMyDcacheArrIdx)(
-      LcvBusCache(cfg=cfg.cpuCfg.shCfg.subCfg.lcvDbusEtcCfg)
+    //val dcacheArr = Array.fill(limMyDcacheArrIdx)(
+    //  LcvBusCache(cfg=cfg.cpuCfg.shCfg.subCfg.lcvDbusEtcCfg)
+    //)
+    val dcacheArr = Array(
+      LcvBusCache(cfg=LcvBusCacheBusPairConfig(
+        mainCfg=cfg.cpuCfg.shCfg.subCfg.lcvDbusEtcCfg.mainCfg,
+        loBusCacheCfg=LcvBusCacheConfig(
+          kind=LcvCacheKind.D,
+          lineSizeBytes=64,
+          depthWords=(
+            //4 * 1024 / (4 * 2)
+            //256
+            //64
+            128
+          ).toInt,
+          numCpus=1,
+          lineWordMemRamStyleAltera=(
+            "no_rw_check, M10K"
+          ),
+          lineAttrsMemRamStyleAltera=(
+            "no_rw_check, MLAB"
+          ),
+        ),
+        hiBusCacheCfg=None,
+      )),
+      LcvBusCache(cfg=cfg.cpuCfg.shCfg.subCfg.lcvDbusEtcCfg),
     )
     def myFbDcache = dcacheArr(myDcacheArrIdxFb)
     def myNonFbDcache = dcacheArr(myDcacheArrIdxNonFb)
@@ -739,6 +837,21 @@ case class MeltedMoon(
     //--------
     //--------
   }
+  //when (io.mainLogicReset) {
+  //  //pixelFifo.io.push <-/< myPixelPushStm
+  //  //vgaClockingArea.lcvVgaCtrl.io.push << myPixelPushStm
+  //  myPixelPushStm.valid := True //io.mainLogicReset //True io.mainLogicReset
+  //  myPixelPushStm.r := (
+  //    U(myPixelPushStm.r.getWidth bits, default -> True)
+  //  )
+  //  myPixelPushStm.g := (
+  //    U(myPixelPushStm.g.getWidth bits, default -> True)
+  //  )
+  //  myPixelPushStm.b := (
+  //    U(myPixelPushStm.b.getWidth bits, default -> True)
+  //  )
+  //  //myPixelPushStm.ready := False
+  //}
 }
 
 case class MeltedMoonSimDutIo(

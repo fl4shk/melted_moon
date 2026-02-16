@@ -173,20 +173,33 @@ end
 //  .clk(clk)//,
 //  //.reset(reset_cpu_reg)
 //);
-wire my_clk = clk;
-reg my_reset = 1'b1;
-always @(posedge my_clk) begin
-  my_reset = 1'b0;
-end
+//wire my_clk = clk;
+//reg my_reset = 1'b1;
+//always @(posedge my_clk) begin
+//  my_reset = 1'b0;
+//end
 
-wire my_vgaClk_clk = clk;//vgaClk_clk;//clk;
-reg my_vgaClk_reset = 1'b1;
-always @(posedge my_vgaClk_clk) begin
-  my_vgaClk_reset = 1'b0;
+//wire my_vgaClk_clk = clk;//vgaClk_clk;//clk;
+//reg my_vgaClk_reset = 1'b1;
+//always @(posedge my_vgaClk_clk) begin
+//  my_vgaClk_reset = 1'b0;
+//end
+localparam IOCTL_RESET_WIDTH = 4;
+reg [IOCTL_RESET_WIDTH - 1:0] my_ioctl_reset = 4'hf;
+always @(posedge clk) begin
+  integer i;
+  my_ioctl_reset[IOCTL_RESET_WIDTH - 1] = (
+    ioctl_download
+    || reset_cpu_reg
+  );
+
+  for (i=0; i<IOCTL_RESET_WIDTH - 1; i=i+1) begin
+    my_ioctl_reset[i] = my_ioctl_reset[i + 1];
+  end
 end
 
 MeltedMoon myMeltedMoon(
-  .mainLogicReset(ioctl_wr || ioctl_download),
+  .mainLogicReset(my_ioctl_reset[0]),
   .sdram_dq(sdram_DQ),
   .sdram_a(sdram_A),
   .sdram_dqml(sdram_DQML),
@@ -217,10 +230,17 @@ MeltedMoon myMeltedMoon(
   .vgaPhys_vsync(vgaPhys_vsync),
   .vgaPixelEn(vgaPixelEn),
   .vgaVisib(vgaVisib),
-  .clk(my_clk),
-  .vgaClk_clk(my_vgaClk_clk),
-  .vgaClk_reset(my_vgaClk_reset),
-  .reset(my_reset)
+  .clk(
+    //my_clk
+    clk
+  ),
+  //.vgaClk_clk(my_vgaClk_clk),
+  //.vgaClk_reset(my_vgaClk_reset),
+  .reset(
+    //my_reset
+    //reset_sys_reg
+    reset_cpu_reg
+  )
 );
 
 //always @(posedge clk) begin
