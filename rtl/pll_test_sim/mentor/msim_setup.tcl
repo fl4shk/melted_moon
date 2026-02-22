@@ -17,7 +17,7 @@
 # ----------------------------------------
 # This script provides commands to simulate the following IP detected in
 # your Quartus project:
-#     pll
+#     pll_test
 # 
 # Altera recommends that you source this Quartus-generated IP simulation
 # script from your own customized top-level script, and avoid editing this
@@ -83,7 +83,7 @@
 # 
 # IP SIMULATION SCRIPT
 # ----------------------------------------
-# If pll is one of several IP cores in your
+# If pll_test is one of several IP cores in your
 # Quartus project, you can generate a simulation script
 # suitable for inclusion in your top-level simulation
 # script by running the following command line:
@@ -94,7 +94,7 @@
 # within the Quartus project, and generate a unified
 # script which supports all the Altera IP within the design.
 # ----------------------------------------
-# ACDS 17.0 602 linux 2026.02.15.15:48:06
+# ACDS 17.0 602 linux 2026.02.15.14:53:52
 
 # ----------------------------------------
 # Initialize variables
@@ -105,7 +105,7 @@ if ![info exists SYSTEM_INSTANCE_NAME] {
 }
 
 if ![info exists TOP_LEVEL_NAME] { 
-  set TOP_LEVEL_NAME "pll"
+  set TOP_LEVEL_NAME "pll_test"
 }
 
 if ![info exists QSYS_SIMDIR] { 
@@ -194,7 +194,7 @@ alias dev_com {
 # Compile the design files in correct order
 alias com {
   echo "\[exec\] com"
-  eval  vlog $USER_DEFINED_VERILOG_COMPILE_OPTIONS $USER_DEFINED_COMPILE_OPTIONS "$QSYS_SIMDIR/pll.vo"
+  eval  vlog $USER_DEFINED_VERILOG_COMPILE_OPTIONS $USER_DEFINED_COMPILE_OPTIONS "$QSYS_SIMDIR/pll_test.vo"
 }
 
 # ----------------------------------------

@@ -1,3 +1,4 @@
+`default_nettype none
 module melted_moon
 (
 	input         clk,
@@ -184,26 +185,47 @@ end
 //always @(posedge my_vgaClk_clk) begin
 //  my_vgaClk_reset = 1'b0;
 //end
-localparam IOCTL_RESET_WIDTH = 4;
-reg [IOCTL_RESET_WIDTH - 1:0] my_ioctl_reset = 4'hf;
-always @(posedge clk) begin
-  integer i;
-  my_ioctl_reset[IOCTL_RESET_WIDTH - 1] = (
-    ioctl_download
-    || reset_cpu_reg
-  );
 
-  for (i=0; i<IOCTL_RESET_WIDTH - 1; i=i+1) begin
-    my_ioctl_reset[i] = my_ioctl_reset[i + 1];
-  end
-end
+//localparam IOCTL_RESET_WIDTH = 4;
+//reg [IOCTL_RESET_WIDTH - 1:0] my_ioctl_reset = {IOCTL_RESET_WIDTH{1'b1}};
+//wire my_ioctl_download_etc = (
+//    reset_cpu_reg
+//    || ioctl_download
+//    //|| ioctl_wr
+//);
+//
+//always @(posedge clk) begin
+//  integer i;
+//  //if (my_seen_ioctl_download) begin
+//    my_ioctl_reset[IOCTL_RESET_WIDTH - 1] = (
+//      //1'b1
+//      my_ioctl_download_etc
+//    );
+//  //end
+//
+//  for (i=0; i<IOCTL_RESET_WIDTH - 1; i=i+1) begin
+//    my_ioctl_reset[i] = my_ioctl_reset[i + 1];
+//  end
+//end
+wire [12:0] temp_sdram_a;
+//wire temp_sdram_dqmh;
+//wire temp_sdram_dqml;
+//assign sdram_A = {temp_sdram_dqmh, temp_sdram_dqml, temp_sdram_a[10:0]};
+//assign sdram_DQMH = temp_sdram_dqmh;
+//assign sdram_DQML = temp_sdram_dqml;
+// NOTE: MiSTer-specific SDRAM board DQM stuff
+assign {sdram_DQMH, sdram_DQML} = temp_sdram_a[12:11];
+assign sdram_A = temp_sdram_a;
 
 MeltedMoon myMeltedMoon(
-  .mainLogicReset(my_ioctl_reset[0]),
+  //.mainLogicReset(
+  //  //my_ioctl_reset[0]
+  //  reset_cpu_reg
+  //),
   .sdram_dq(sdram_DQ),
-  .sdram_a(sdram_A),
-  .sdram_dqml(sdram_DQML),
-  .sdram_dqmh(sdram_DQMH),
+  .sdram_a(temp_sdram_a),
+  //.sdram_dqml(temp_sdram_dqml),
+  //.sdram_dqmh(temp_sdram_dqmh),
   .sdram_ba(sdram_BA),
   .sdram_nCs(sdram_nCS),
   .sdram_nWe(sdram_nWE),
@@ -217,9 +239,9 @@ MeltedMoon myMeltedMoon(
   .ioctl_addr(ioctl_addr),
   .ioctl_dout(ioctl_dout),
   .ioctl_upload(ioctl_upload),
-  .ioctl_upload_req(ioctl_upload_req),
-  .ioctl_upload_index(ioctl_upload_index),
-  .ioctl_din(ioctl_din),
+  //.ioctl_upload_req(ioctl_upload_req),
+  //.ioctl_upload_index(ioctl_upload_index),
+  //.ioctl_din(ioctl_din),
   .ioctl_rd(ioctl_rd),
   .ioctl_file_ext(ioctl_file_ext),
   .ioctl_wait(ioctl_wait),

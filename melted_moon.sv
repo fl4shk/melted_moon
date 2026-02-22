@@ -244,7 +244,9 @@ assign VIDEO_ARY = (!ar) ? 12'd3 : 12'd0;
 
 `include "build_id.v" 
 localparam CONF_STR = {
-	"Template;;",
+	"MeltedMoon;;",
+	"-;",
+	"F1,BIN;",
 	"-;",
 	"O[122:121],Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"O[2],TV Mode,NTSC,PAL;",
@@ -255,7 +257,7 @@ localparam CONF_STR = {
 	"P1-, -= Options in page 1 =-;",
 	"P1-;",
 	"P1O[5],Option 1-1,Off,On;",
-	"d0P1F1,BIN;",
+	"d0P1F2,BIN;",
 	"H0P1O[10],Option 1-2,Off,On;",
 	"-;",
 	"P2,Test Page 2;",
@@ -319,9 +321,9 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(IOCTL_WIDE)) hps_io
   .ioctl_addr(ioctl_addr),
   .ioctl_dout(ioctl_dout),
   .ioctl_upload(ioctl_upload),
-  .ioctl_upload_req(ioctl_upload_req),
-  .ioctl_upload_index(ioctl_upload_index),
-  .ioctl_din(ioctl_din),
+  //.ioctl_upload_req(ioctl_upload_req),
+  //.ioctl_upload_index(ioctl_upload_index),
+  //.ioctl_din(ioctl_din),
   .ioctl_rd(ioctl_rd),
   .ioctl_file_ext(ioctl_file_ext),
   .ioctl_wait(ioctl_wait)
