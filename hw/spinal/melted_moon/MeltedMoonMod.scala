@@ -341,7 +341,119 @@ case class MeltedMoon(
     s"here we go: cpp:${cpp}"
   )
   //val vgaClockingArea = new ClockingArea(vgaClkDomain) 
-  val vgaArea = new Area {
+  //val myVgaResetCond = (
+  //  Bool()
+  //)
+  val mySdramCtrl = LcvBusSdramCtrl(
+    cfg=cfg.sdramCtrlCfg
+  )
+  mySdramCtrl.io.sdram <> io.sdram
+
+  def mySdramCtrlHostIdxIoctl = 0
+  def mySdramCtrlHostIdxFbDcache = 1
+  def mySdramCtrlHostIdxIcache = 2
+  def mySdramCtrlHostIdxNonFbDcache = 3
+  def limMySdramCtrlHostIdx = 4
+
+  val mySdramCtrlBusArbiter = LcvBusArbiter(
+    cfg=LcvBusArbiterConfig(
+      busCfg=cfg.sdramCtrlCfg.busCfg,
+      numHosts=limMySdramCtrlHostIdx, // add 1 for the icache
+      kind=(
+        //LcvBusArbiterKind.Priority
+        LcvBusArbiterKind.RoundRobin
+      ),
+    )
+  )
+  //mySdramCtrl.io.bus <-/< mySdramCtrlBusArbiter.io.dev
+  val mySdramDeburster = LcvBusDeburster(
+    cfg=LcvBusDebursterConfig(
+      loBusCfg=(
+        cfg.sdramCtrlCfg.busCfg
+        //LcvBusConfig(
+        //  mainCfg=cfg.sdramCtrlCfg.busCfg.mainCfg.mkCopyWithoutAllowingBurst()
+        //)
+      )
+    )
+  )
+  mySdramDeburster.io.loBus <-/< mySdramCtrlBusArbiter.io.dev
+  val myTempSdramDebursterHiBus = cloneOf(mySdramDeburster.io.hiBus)
+  myTempSdramDebursterHiBus <-/< mySdramDeburster.io.hiBus
+  myTempSdramDebursterHiBus.h2dBus.translateInto(
+    mySdramCtrl.io.bus.h2dBus
+  )(
+    dataAssignment=(outp, inp) => {
+      outp.mainNonBurstInfo := inp.mainNonBurstInfo
+      outp.mainBurstInfo := outp.mainBurstInfo.getZero
+    }
+  )
+  mySdramCtrl.io.bus.d2hBus.translateInto(
+    myTempSdramDebursterHiBus.d2hBus
+  )(
+    dataAssignment=(outp, inp) => {
+      outp.mainNonBurstInfo := inp.mainNonBurstInfo
+    }
+  )
+
+  //mySdramDeburster.io.hiBus.translateInto(
+  //)
+
+  def mySdramCtrlIoctlHost = (
+    mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxIoctl)
+  )
+  def mySdramCtrlFbDcacheHost = (
+    mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxFbDcache)
+  )
+  def mySdramCtrlIcacheHost = (
+    mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxIcache)
+  )
+  def mySdramCtrlNonFbDcacheHost = (
+    mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxNonFbDcache)
+  )
+  val sdramInitFifo = StreamFifo(
+    dataType=cloneOf(mySdramCtrlIoctlHost.h2dBus.payload),
+    depth=(
+      32,
+    ),
+    latency=2,
+    forFMax=true,
+    //pushClock=ioctlClkDomain,
+    //popClock=ClockDomain.current,
+  )
+  val cartDownload = (
+    io.ioctl_wr
+    && io.ioctl_download
+    && io.ioctl_index(5 downto 0) === 0x1
+    //&& codeIndex
+    //&& !codeIndex
+    //&& (io.ioctl_index =/= 4)
+    //&& (io.ioctl_index =/= 254)
+  )
+  val myMainResetCond = (
+    //io.mainLogicReset,
+    //RegNextWhen(
+    //  False,
+    //  cond=(
+        RegNextWhen(
+          False,
+          cond=(
+            //io.ioctl_download
+            cartDownload
+          ),
+          init=True,
+        )
+        || io.ioctl_download
+        || sdramInitFifo.io.pop.valid
+    //  ),
+    //  init=True
+    //)
+  )
+
+  val vgaArea = new ResetArea(
+    //myVgaResetCond,
+    myMainResetCond,
+    true,
+  ) {
     //val vgaCtrl = VgaCtrl(rgbConfig=cfg.demoCfg.rgbCfg)
 
     val vgaTimingInfo = cfg.demoCfg.vgaTimingInfo
@@ -481,83 +593,8 @@ case class MeltedMoon(
       VBLANK
       = newElement();
   }
-  val mySdramCtrl = LcvBusSdramCtrl(
-    cfg=cfg.sdramCtrlCfg
-  )
-  mySdramCtrl.io.sdram <> io.sdram
-
-  def mySdramCtrlHostIdxIoctl = 0
-  def mySdramCtrlHostIdxFbDcache = 1
-  def mySdramCtrlHostIdxIcache = 2
-  def mySdramCtrlHostIdxNonFbDcache = 3
-  def limMySdramCtrlHostIdx = 4
-
-  val mySdramCtrlBusArbiter = LcvBusArbiter(
-    cfg=LcvBusArbiterConfig(
-      busCfg=cfg.sdramCtrlCfg.busCfg,
-      numHosts=limMySdramCtrlHostIdx, // add 1 for the icache
-      kind=(
-        //LcvBusArbiterKind.Priority
-        LcvBusArbiterKind.RoundRobin
-      ),
-    )
-  )
-  //mySdramCtrl.io.bus <-/< mySdramCtrlBusArbiter.io.dev
-  val mySdramDeburster = LcvBusDeburster(
-    cfg=LcvBusDebursterConfig(
-      loBusCfg=(
-        cfg.sdramCtrlCfg.busCfg
-        //LcvBusConfig(
-        //  mainCfg=cfg.sdramCtrlCfg.busCfg.mainCfg.mkCopyWithoutAllowingBurst()
-        //)
-      )
-    )
-  )
-  mySdramDeburster.io.loBus <-/< mySdramCtrlBusArbiter.io.dev
-  val myTempSdramDebursterHiBus = cloneOf(mySdramDeburster.io.hiBus)
-  myTempSdramDebursterHiBus <-/< mySdramDeburster.io.hiBus
-  myTempSdramDebursterHiBus.h2dBus.translateInto(
-    mySdramCtrl.io.bus.h2dBus
-  )(
-    dataAssignment=(outp, inp) => {
-      outp.mainNonBurstInfo := inp.mainNonBurstInfo
-      outp.mainBurstInfo := outp.mainBurstInfo.getZero
-    }
-  )
-  mySdramCtrl.io.bus.d2hBus.translateInto(
-    myTempSdramDebursterHiBus.d2hBus
-  )(
-    dataAssignment=(outp, inp) => {
-      outp.mainNonBurstInfo := inp.mainNonBurstInfo
-    }
-  )
-
-  //mySdramDeburster.io.hiBus.translateInto(
-  //)
-
-  def mySdramCtrlIoctlHost = (
-    mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxIoctl)
-  )
-  def mySdramCtrlFbDcacheHost = (
-    mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxFbDcache)
-  )
-  def mySdramCtrlIcacheHost = (
-    mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxIcache)
-  )
-  def mySdramCtrlNonFbDcacheHost = (
-    mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxNonFbDcache)
-  )
-  val sdramInitFifo = StreamFifo(
-    dataType=cloneOf(mySdramCtrlIoctlHost.h2dBus.payload),
-    depth=(
-      32,
-    ),
-    latency=2,
-    forFMax=true,
-    //pushClock=ioctlClkDomain,
-    //popClock=ClockDomain.current,
-  )
   //val ioctlClockingArea = new ClockingArea(ioctlClkDomain) 
+
   val ioctlArea = new Area {
     io.ioctl_upload_req := False
     io.ioctl_upload_index := 0x0
@@ -687,15 +724,6 @@ case class MeltedMoon(
     //}
     //val codeIndex = io.ioctl_index.orR//andR
     //val codeDownload = io.ioctl_download && codeIndex
-    val cartDownload = (
-      io.ioctl_wr
-      && io.ioctl_download
-      && io.ioctl_index(5 downto 0) === 0x1
-      //&& codeIndex
-      //&& !codeIndex
-      //&& (io.ioctl_index =/= 4)
-      //&& (io.ioctl_index =/= 254)
-    )
     val myIoctlRecvPushValidCond = (
       //io.ioctl_wr && io.ioctl_download && cartDownload
       cartDownload
@@ -804,41 +832,25 @@ case class MeltedMoon(
     mySdramCtrlIoctlHost.d2hBus.ready := True
   }
 
-  //val rPixelEnCnt = Reg(UInt(
-  //  log2Up(cpp) bits
-  //))
-  //io.vgaPixelEn := (
-  //  rPixelEnCnt === cpp - 1
-  //)
-  ////when (
-  ////  vgaClockingArea.vgaCtrl.io.pixels.fire
-  ////  || !vgaClockingArea.vgaCtrl.io.pixels.ready
-  ////) {
-  //  when (rPixelEnCnt < cpp - 1) {
-  //    rPixelEnCnt := rPixelEnCnt + 1
-  //  } otherwise {
- //    rPixelEnCnt := 0x0
-  //  }
-  ////}
-  val myMainResetCond = (
-    //io.mainLogicReset,
-    //RegNextWhen(
-    //  False,
-    //  cond=(
-        RegNextWhen(
-          False,
-          cond=(
-            //io.ioctl_download
-            ioctlArea.cartDownload
-          ),
-          init=True,
-        )
-        || io.ioctl_download
-        || sdramInitFifo.io.pop.valid
-    //  ),
-    //  init=True
-    //)
-  )
+  val rPixelEnCnt = Reg(UInt(
+    log2Up(cpp) bits
+  ))
+  when (myMainResetCond) {
+    io.vgaPixelEn := (
+      rPixelEnCnt === cpp - 1
+    )
+    //when (
+    //  vgaClockingArea.vgaCtrl.io.pixels.fire
+    //  || !vgaClockingArea.vgaCtrl.io.pixels.ready
+    //) {
+      when (rPixelEnCnt < cpp - 1) {
+        rPixelEnCnt := rPixelEnCnt + 1
+      } otherwise {
+        rPixelEnCnt := 0x0
+      }
+    //}
+  }
+
   //mySdramCtrlBusArbiter.io.en := (
   //  //True
   //  //!myMainResetCond
