@@ -2,8 +2,8 @@ package melted_moon
 
 import spinal.core._
 import spinal.core.sim._
-import spinal.core.formal._
 import spinal.lib._
+import spinal.core.formal._
 import spinal.lib.misc.pipeline._
 import spinal.lib.io._
 
@@ -144,40 +144,28 @@ case class MeltedMoonConfig(
       RgbConfig(rWidth=5, gWidth=5, bWidth=5)
     ),
     vgaTimingInfo=(
-      //LcvVgaTimingInfoMap.map("640x480@60")
+      LcvVgaTimingInfoMap.map("640x480@60")
       //LcvVgaTimingInfoMap.map("320x240@60")
-      LcvVgaTimingInfo(
-        //pixelClk=12.5 MHz,
-        //pixelClk=25.175 MHz,
-        pixelClk=(
-          //100.0 MHz
-          25.0 MHz
-        ),
-        //htiming=LcvVgaTimingHv(
-        //  visib=640 / 2,
-        //  front=16 / 2,
-        //  sync=96 / 2,
-        //  back=48 / 2
-        //),
-        htiming=LcvVgaTimingHv(
-          visib=320,
-          front=8,
-          sync=32,
-          back=40,
-        ),
-        //vtiming=LcvVgaTimingHv(
-        //  visib=480 / 2,
-        //  front=10 / 2,
-        //  sync=2 / 2,
-        //  back=33 / 2
-        //),
-        vtiming=LcvVgaTimingHv(
-          visib=240,
-          front=3,
-          sync=4,
-          back=6,
-        ),
-      )
+      //LcvVgaTimingInfo(
+      //  //pixelClk=12.5 MHz,
+      //  //pixelClk=25.175 MHz,
+      //  pixelClk=(
+      //    //6.0 MHz
+      //    25.0 MHz
+      //  ),
+      //  htiming=LcvVgaTimingHv(
+      //    visib=320,
+      //    front=8,
+      //    sync=32,
+      //    back=40,
+      //  ),
+      //  vtiming=LcvVgaTimingHv(
+      //    visib=240,
+      //    front=3,
+      //    sync=4,
+      //    back=6,
+      //  ),
+      //)
     ),
     fbCnt2dShift=ElabVec2[Int](
       x=(
@@ -191,10 +179,7 @@ case class MeltedMoonConfig(
   )
   val sdramCtrlCfg = LcvBusSdramCtrlConfig(
     clkRate=clkRate,
-    shortDqmToA12A11=(
-      sdramCtrlUseAltddioOut
-      //true
-    ),
+    shortDqmToA12A11=sdramCtrlUseAltddioOut,
     useAltddioOut=sdramCtrlUseAltddioOut,
     srcWidth=cpuCfg.shCfg.subCfg.myLcvBusSrcWidth
   )
@@ -327,7 +312,6 @@ case class MeltedMoon(
       //cloneOf(pixelFifo.io.push)
       Stream(Rgb(cfg.demoCfg.rgbCfg))
     )
-    //Stream(Rgb(cfg.demoCfg.rgbCfg))
   )
   val myPixelMuxSel = UInt(1 bits)
   val myPixelMuxStm = (
@@ -385,7 +369,6 @@ case class MeltedMoon(
           //cfg.ctrlFifoDepth
           //io.misc.fifoDepth
           32
-          //1
         ),
       )
     )
@@ -424,17 +407,13 @@ case class MeltedMoon(
       mySeenPixelPushStmValid
       || rSavedSeenPixelPushStmValid
     )
-    mySeenPixelPushStmValid := (
-      myPixelPushStm.last.valid
-      //myPixelPushStm.valid
-      //lcvVgaCtrl.io.push.valid
-    )
+    mySeenPixelPushStmValid := myPixelPushStm.last.valid
     when (mySeenPixelPushStmValid) {
       rSavedSeenPixelPushStmValid := True
     }
 
-    //lcvVgaCtrl.io.en := True//stickySeenMyPixelPushStmValid
-    //lcvVgaCtrl.io.push << myPixelMuxStm
+    lcvVgaCtrl.io.en := True//stickySeenMyPixelPushStmValid
+    lcvVgaCtrl.io.push << myPixelMuxStm
     when (lcvVgaCtrl.io.misc.visib) {
       io.vgaPhys.col.r(7 downto 3) := lcvVgaCtrl.io.phys.col.r
       io.vgaPhys.col.g(7 downto 3) := lcvVgaCtrl.io.phys.col.g
@@ -480,34 +459,16 @@ case class MeltedMoon(
       rSavedDoVblankIrq := False
     }
     myDoVblankIrq := (
-      (
+      rose(
         RegNext(
+          //!io.vgaVisib
           (
-            rose(lcvVgaCtrl.io.misc.hpipeS === LcvVgaState.front)
-            && rose(lcvVgaCtrl.io.misc.vpipeS === LcvVgaState.front)
+            !io.vgaPhys.vsync
+            && !io.vgaPhys.hsync
           ),
-          init=False,
+          init=False
         )
       )
-      ////rose(
-      //  RegNext(
-      //    //!io.vgaVisib
-      //    (
-      //      !io.vgaPhys.vsync
-      //      //&& !io.vgaPhys.hsync
-      //    ),
-      //    init=False
-      //  )
-      ////)
-      //&& 
-      ////rose(
-      //  RegNext(
-      //    (
-      //      !io.vgaPhys.hsync
-      //    ),
-      //    init=False
-      //  )
-      ////)
     )
     vblankIrqFifo.io.push.valid := stickyDoVblankIrq
     vblankIrqFifo.io.push.payload := True
@@ -739,9 +700,7 @@ case class MeltedMoon(
       //io.ioctl_wr && io.ioctl_download && cartDownload
       cartDownload
     )
-    //myPixelMuxSel.lsb := (
-    //  vgaArea.stickySeenMyPixelPushStmValid
-    //)
+    myPixelMuxSel.lsb := vgaArea.stickySeenMyPixelPushStmValid
     myIoctlRecvPushStm.head.valid := (
       //io.ioctl_upload 
       //RegNextWhen(
@@ -861,31 +820,11 @@ case class MeltedMoon(
  //    rPixelEnCnt := 0x0
   //  }
   ////}
-  vgaArea.lcvVgaCtrl.io.en := True
-
-  val calcPos = LcvVideoCalcPos(
-    someSize2d=cfg.demoCfg.vgaTimingInfo.fbSize2d,
-  )
-  calcPos.io.en := (
-    vgaArea.lcvVgaCtrl.io.push.fire
-    //myPixelPushStm.head.fire
-  )
-  //val myCalcPosDualOverflow = (
-  //  KeepAttribute(
-  //    calcPos.io.info.posWillOverflow.x
-  //    && calcPos.io.info.posWillOverflow.y
-  //  )
-  //)
-
-  //val rTempInnerResetCond = (
-  //  Reg(Bool(), init=True)
-  //)
-  //when (ioctlArea.cartDownload) {
-  //  rTempInnerResetCond := True
-  //}
-  val myInnerResetCond = (
-    Vec[Bool](
-      (
+  val myMainResetCond = (
+    //io.mainLogicReset,
+    //RegNextWhen(
+    //  False,
+    //  cond=(
         RegNextWhen(
           False,
           cond=(
@@ -894,140 +833,12 @@ case class MeltedMoon(
           ),
           init=True,
         )
-        //rTempInnerResetCond
-        //||
-        //io.ioctl_download
-        || ioctlArea.cartDownload
+        || io.ioctl_download
         || sdramInitFifo.io.pop.valid
-      ),
-      (
-        //True
-        //vblankIrqFifo.io.pop.valid
-        //vgaArea.myDoVblankIrq
-        //calcPos.io.info.posWillOverflow.x
-        //&& 
-        fell(calcPos.io.info.posWillOverflow.y)
-      ),
-    )
-  )
-  //val myHistInnerResetCond0 = (
-  //  History[Bool](
-  //    that=(
-  //      //False
-  //      //io.ioctl_download
-  //      ioctlArea.cartDownload
-  //    ),
-  //    when=(
-  //      !myInnerResetCond(0)
-  //    ),
-  //    length=2,
-  //    init=True,
-  //  )
-  //  //RegNextWhen(
-  //  //  True,
-  //  //  cond=myInnerResetCond,
-  //  //  init=False,
-  //  //)
-  //)
-  //val myHistInnerResetCond1 = (
-  //  History[Bool](
-  //    that=(
-  //      False
-  //      //io.ioctl_download
-  //    ),
-  //    when=(
-  //      myHistInnerResetCond0.last
-  //      && myInnerResetCond(1)
-  //    ),
-  //    length=2,
-  //    init=True,
-  //  )
-  //  //RegNextWhen(
-  //  //  True,
-  //  //  cond=myInnerResetCond,
-  //  //  init=False,
-  //  //)
-  //)
-  //val rSavedInnerResetCond0 = (
-  //  //Vec.fill(myInnerResetCond.size)(
-  //    Reg(Bool(), init=False)
-  //  //)
-  //)
-  //val stickyInnerResetCond0 = (
-  //  //Vec.fill(myInnerResetCond.size)(
-  //    Bool()
-  //  //)
-  //)
-  val rMainResetState = Reg(Bool(), init=False)
-  val myMainResetCond = (
-    //myHistInnerResetCond0.last
-    //|| 
-
-    //myInnerResetCond(0)
-    //||
-    //(
-    //  myHistInnerResetCond1.last
+    //  ),
+    //  init=True
     //)
-    ////io.mainLogicReset,
-    ////RegNextWhen(
-    ////  False,
-    ////  cond=(
-    //    myInnerResetCond
-    //    || (
-    //      RegNextWhen(
-    //        False,
-    //        cond=(
-    //          vgaArea.lcvVgaCtrl.io.misc.hpipeS === LcvVgaState.
-    //        ),
-    //        init=True,
-    //      )
-    //    )
-    ////  ),
-    ////  init=True
-    ////)
-    //stickyInnerResetCond.asBits.andR
-    //stickyInnerResetCond0
-    //&& myInnerResetCond(1)
-    myInnerResetCond(0)
-    || rMainResetState
   )
-  switch (rMainResetState) {
-    is (False) {
-      when (myInnerResetCond(0)) {
-        rMainResetState := True
-      }
-    }
-    is (True) {
-      when (myInnerResetCond(1)) {
-        rMainResetState := False
-      }
-    }
-  }
-  //for (idx <- 0 until myInnerResetCond.size) {
-  //  when (myInnerResetCond(idx)) {
-  //    rSavedInnerResetCond(idx) := True
-  //  }
-  //  stickyInnerResetCond(idx) := (
-  //    myInnerResetCond(idx)
-  //    || rSavedInnerResetCond(idx)
-  //  )
-  //  when (
-  //    fell(myMainResetCond)
-  //  ) {
-  //  }
-  //}
-  //when (myInnerResetCond(0)) {
-  //  rSavedInnerResetCond0 := True
-  //}
-  //stickyInnerResetCond0 := (
-  //  myInnerResetCond(0)
-  //  || rSavedInnerResetCond0
-  //)
-  //when (
-  //  fell(myMainResetCond)
-  //) {
-  //}
-
   //mySdramCtrlBusArbiter.io.en := (
   //  //True
   //  //!myMainResetCond
@@ -1038,77 +849,20 @@ case class MeltedMoon(
   //  )
   //)
 
-  myPixelMuxSel.lsb := (
-    //vgaArea.stickySeenMyPixelPushStmValid
-    //True
-    !myMainResetCond
-
-    //RegNextWhen(
-    //  True,
-    //  cond=(
-    //    rose(
-    //      RegNext(
-    //        calcPos.io.info.posWillOverflow.x,
-    //        init=False
-    //      )
-    //      && calcPos.io.info.posWillOverflow.y
-    //    )
-    //  ),
-    //  init=False
-    //)
-  )
-  vgaArea.lcvVgaCtrl.io.push << myPixelMuxStm
-
-  //myPixelMuxSel.lsb := False
-  //vgaArea.lcvVgaCtrl.io.en := !myMainResetCond
-
-  val myFbCtrl = LcvBusFramebufferCtrl(
-    cfg=(
-      cfg.demoCfg.myFbCfg
-      //myDbgFbCfg
-    )
-  )
-  //myFbCtrl.io.pop.ready := True
-  //pixelFifo.io.push <-/< myFbCtrl.io.pop
-  myPixelPushStm.last <-/< myFbCtrl.io.pop
   val main = new ResetArea(
     myMainResetCond,
     //false
     true
   ) {
-    //vgaArea.lcvVgaCtrl.io.en := True//stickySeenMyPixelPushStmValid
-    //vgaArea.lcvVgaCtrl.io.push << myPixelMuxStm
-    //myPixelMuxSel.lsb := (
-    //  //vgaArea.stickySeenMyPixelPushStmValid
-    //  True
-    //)
-    //val myFbCtrl = LcvBusFramebufferCtrl(
-    //  cfg=(
-    //    cfg.demoCfg.myFbCfg
-    //    //myDbgFbCfg
-    //  )
-    //)
-    ////myFbCtrl.io.pop.ready := True
-    ////pixelFifo.io.push <-/< myFbCtrl.io.pop
-    //myPixelPushStm.last <-/< myFbCtrl.io.pop
-    //def myRstVgaCtrlPushCntMax = 16 //32
-    //val rRstVgaCtrlPushCnt = (
-    //  Reg(UInt(log2Up(myRstVgaCtrlPushCntMax + 1) + 2 bits))
-    //  init(myRstVgaCtrlPushCntMax)
-    //)
-    //when (
-    //  vgaArea.lcvVgaCtrl.io.push.fire
-    //  && !rRstVgaCtrlPushCnt.msb
-    //) {
-    //  rRstVgaCtrlPushCnt := rRstVgaCtrlPushCnt - 1
-    //}
-    //val myHistVgaCtrlPushValid = (
-    //  History[UInt](
-    //    leng
-    //  )
-    //)
-    //vgaArea.lcvVgaCtrl.io.en := rRstVgaCtrlPushCnt.msb
-    //vgaArea.lcvVgaCtrl.io.push <-/< myFbCtrl.io.pop
+    val myFbCtrl = LcvBusFramebufferCtrl(
+      cfg=(
+        cfg.demoCfg.myFbCfg
+        //myDbgFbCfg
+      )
+    )
+    //myFbCtrl.io.pop.ready := True
+    //pixelFifo.io.push <-/< myFbCtrl.io.pop
+    myPixelPushStm.last <-/< myFbCtrl.io.pop
     //--------
     val cpu = SnowHouseCpuWithoutRam(program=cfg.testProgram.program)
 
@@ -1385,37 +1139,37 @@ case class MeltedMoon(
     //val myCpuCacheSdramCtrlBusArbiter
     //--------
     //--------
-    //val myDbgBadData = Array[Long](
-    //  //0x00100008,
-    //  //0x00080010,
-    //  //0x0010,
-    //  //0x0008,
-    //  0x0028002a
-    //)
-    //val myDbgAddrArr = Array[Long](
-    //  //0x6c8,
-    //  //0x6ca,
-    //  0x00800bc0
-    //)
-    //val myDbgFbDcacheCondVec = (
-    //  KeepAttribute(
-    //    Vec[Bool](List[Bool](
-    //      (
-    //        myFbDcache.io.loBus.h2dBus.addr === myDbgAddrArr(0x0)
-    //        && myFbDcache.io.loBus.h2dBus.isWrite
-    //      ),
-    //      (
-    //        myFbDcache.io.loBus.h2dBus.addr === myDbgAddrArr(0x0)
-    //        && myFbDcache.io.loBus.h2dBus.data === myDbgBadData(0x0)
-    //        && myFbDcache.io.loBus.h2dBus.isWrite
-    //      ),
-    //      (
-    //        myFbDcache.io.hiBus.h2dBus.addr === myDbgAddrArr(0x0)
-    //        && myFbDcache.io.hiBus.h2dBus.isWrite
-    //      )
-    //    ))
-    //  )
-    //)
+    val myDbgBadData = Array[Long](
+      //0x00100008,
+      //0x00080010,
+      //0x0010,
+      //0x0008,
+      0x0028002a
+    )
+    val myDbgAddrArr = Array[Long](
+      //0x6c8,
+      //0x6ca,
+      0x00800bc0
+    )
+    val myDbgFbDcacheCondVec = (
+      KeepAttribute(
+        Vec[Bool](List[Bool](
+          (
+            myFbDcache.io.loBus.h2dBus.addr === myDbgAddrArr(0x0)
+            && myFbDcache.io.loBus.h2dBus.isWrite
+          ),
+          (
+            myFbDcache.io.loBus.h2dBus.addr === myDbgAddrArr(0x0)
+            && myFbDcache.io.loBus.h2dBus.data === myDbgBadData(0x0)
+            && myFbDcache.io.loBus.h2dBus.isWrite
+          ),
+          (
+            myFbDcache.io.hiBus.h2dBus.addr === myDbgAddrArr(0x0)
+            && myFbDcache.io.hiBus.h2dBus.isWrite
+          )
+        ))
+      )
+    )
     //val myDbgBadData = Array[Int](
     //  //0x00100008,
     //  //0x00080010,
@@ -1513,8 +1267,8 @@ case class MeltedMoon(
     //    ))
     //  )
     //)
-  }
 
+  }
   //when (io.mainLogicReset) {
     //pixelFifo.io.push <-/< myPixelPushStm
     //vgaClockingArea.lcvVgaCtrl.io.push << myPixelPushStm
