@@ -91,7 +91,7 @@ case class MeltedMoonConfig(
     programStr=(
       //"test/snowhousecpu-test-5.bin"
       //"test/snowhousecpu-framebuffer-demo.bin"
-      "snowhousecpu-framebuffer-demo-320x240.bin"
+      "debug/snowhousecpu-framebuffer-demo-320x240.bin"
     ),
     //exposeRegFileWriteDataToIo=true,
     optTwoCycleRegFileReads=(
@@ -472,12 +472,18 @@ case class MeltedMoon(
     mySdramCtrlFbInitbHost.h2dBus <-/< myTempH2dStm
     mySdramCtrlFbInitbHost.d2hBus.ready := True
 
-    myTempH2dStm.valid := (rCnt < fbSize2d.y * fbSize2d.x)
-    myTempH2dStm.addr := (
-      Cat(
-        rCnt,
-        False
-      ).asUInt.resize(myTempH2dStm.addr.getWidth)
+    myTempH2dStm.valid := (
+      rCnt < fbSize2d.y * fbSize2d.x
+    )
+    myTempH2dStm.addr := 0x0
+    myTempH2dStm.addr.allowOverride
+    myTempH2dStm.addr(cfg.demoCfg.fbAddrSliceHi) := True
+    myTempH2dStm.addr(rCnt.high + 1 downto 1) := (
+      rCnt
+      //Cat(
+      //  rCnt,
+      //  False
+      //).asUInt.resize(myTempH2dStm.addr.getWidth)
     )
     myTempH2dStm.byteEn := (
       U(myTempH2dStm.byteEn.getWidth bits, default -> True)
