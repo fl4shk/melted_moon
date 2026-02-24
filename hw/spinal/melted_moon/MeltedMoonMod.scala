@@ -274,9 +274,9 @@ case class MeltedMoon(
   )
   mySdramCtrl.io.sdram <> io.sdram
   //--------
-  def mySdramCtrlHostIdxFbInit = 0
-  def mySdramCtrlHostIdxIoctl = 1//0//1 //
-  def mySdramCtrlHostIdxFbDcache = 2//1////2 
+  def mySdramCtrlHostIdxFbDcache = 0//2//1////2 
+  def mySdramCtrlHostIdxFbInit = 1
+  def mySdramCtrlHostIdxIoctl = 2//1//0//1 //
   def mySdramCtrlHostIdxIcache = 3//2
   def mySdramCtrlHostIdxNonFbDcache = 4//3
   def limMySdramCtrlHostIdx = 5//4
@@ -326,14 +326,14 @@ case class MeltedMoon(
 
   mySdramCtrl.io.bus <-/< mySdramCtrlBusArbiter.io.dev
 
+  def mySdramCtrlFbDcacheHost = (
+    mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxFbDcache)
+  )
   def mySdramCtrlFbInitbHost = (
     mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxFbInit)
   )
   def mySdramCtrlIoctlHost = (
     mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxIoctl)
-  )
-  def mySdramCtrlFbDcacheHost = (
-    mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxFbDcache)
   )
   def mySdramCtrlIcacheHost = (
     mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxIcache)
@@ -420,7 +420,10 @@ case class MeltedMoon(
   )
   //--------
   val vgaCtrlArea = 
-    //new ResetArea(rose(myInnerResetCond), cumulative=true)
+    //new ResetArea(
+    //  /*rose*/(myInnerResetCond),
+    //  cumulative=true
+    //)
     new Area
   {
     val vgaTimingInfo = cfg.demoCfg.vgaTimingInfo
@@ -429,16 +432,31 @@ case class MeltedMoon(
         clkRate=cfg.clkRate,
         //rgbConfig=physRgbConfig,
         rgbConfig=cfg.demoCfg.rgbCfg,
-        vgaTimingInfo=cfg.demoCfg.vgaTimingInfo,
+        vgaTimingInfo=vgaTimingInfo,
         fifoDepth=(
           //cfg.ctrlFifoDepth
           //io.misc.fifoDepth
-          32
+          //32
+          1
         ),
       )
     )
-    lcvVgaCtrl.io.fifoFlush := False//rose(myInnerResetCond) // False//
+    //lcvVgaCtrl.io.fifoFlush := False//rose(myInnerResetCond) // False//
+    //val calcPos = LcvVideoCalcPos(
+    //  someSize2d=vgaTimingInfo.fbSize2d
+    //)
+    ////calcPos.io.en := lcvVgaCtrl.io.en
+    //calcPos.io.en := lcvVgaCtrl.io.push.fire
+    ////when (
+    ////  calcPos.io.info.posWillOverflow.y
+    ////) {
+    ////}
   }
+  vgaCtrlArea.lcvVgaCtrl.io.fifoFlush := (
+    False
+    //myInnerResetCond
+    //False//rose(myInnerResetCond) // False//
+  )
   val otherVgaArea = new Area {
     io.vgaPhys.setAsReg() init(io.vgaPhys.getZero)
     io.vgaVisib.setAsReg() init(io.vgaVisib.getZero)
@@ -495,8 +513,8 @@ case class MeltedMoon(
   }
   //--------
   val fbInitArea =
-    //new Area
-    new ResetArea(rose(myInnerResetCond), cumulative=true)
+    new Area
+    //new ResetArea(rose(myInnerResetCond), cumulative=true)
   {
     val vgaTimingInfo = cfg.demoCfg.vgaTimingInfo
     val fbSize2d = cfg.demoCfg.myFbCfg.fbSize2d
@@ -509,7 +527,7 @@ case class MeltedMoon(
     mySdramCtrlFbInitbHost.d2hBus.ready := True
 
     myTempH2dStm.valid := (
-      rCnt < fbSize2d.y * fbSize2d.x
+      rCnt < ((fbSize2d.y * fbSize2d.x) >> 1)
     )
     myTempH2dStm.addr := 0x0
     myTempH2dStm.addr.allowOverride
