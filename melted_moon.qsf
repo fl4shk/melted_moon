@@ -533,5 +533,5 @@ set_global_assignment -name SIP_FILE rtl/pll_test.sip
 set_global_assignment -name STRATIXII_CARRY_CHAIN_LENGTH 32
 set_global_assignment -name FITTER_EFFORT "STANDARD FIT"
 set_global_assignment -name SIGNALTAP_FILE stp2.stp
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 set_global_assignment -name SLD_FILE db/stp2_auto_stripped.stp
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

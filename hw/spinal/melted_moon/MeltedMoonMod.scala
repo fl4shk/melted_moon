@@ -70,6 +70,7 @@ case class MeltedMoonConfig(
   //  clkRate=100.0 MHz
   //),
   sdramCtrlUseAltddioOut: Boolean=true,
+  dbgUseLcvBusMem: Boolean=false,
 ) {
   val clkRate = (
     100.0 MHz
@@ -93,7 +94,8 @@ case class MeltedMoonConfig(
     instrRamKind=0,
     programStr=(
       //"test/snowhousecpu-test-5.bin"
-      "test/snowhousecpu-framebuffer-demo.bin"
+      //"test/snowhousecpu-framebuffer-demo.bin"
+      "other_tests.ignore/melted_moon_doom.bin"
       //"debug/snowhousecpu-framebuffer-demo-320x240.bin"
     ),
     //exposeRegFileWriteDataToIo=true,
@@ -357,27 +359,79 @@ case class MeltedMoonIo(
   //--------
   //val mainLogicReset = in(Bool())
   //--------
-  val sdram = LcvBusSdramIo(
-    cfg=cfg.sdramCtrlCfg
+  val sdram = (
+    !cfg.dbgUseLcvBusMem
+  ) generate (
+    LcvBusSdramIo(
+      cfg=cfg.sdramCtrlCfg
+    )
   )
   //--------
   def ioctlDW = cfg.ioctlSpinalDw - 1
 	// ARM -> FPGA download
-	val ioctl_download = in(Bool()) // signal indicating an active download
-	val ioctl_index = in(UInt(15 + 1 bits))
+	val ioctl_download = (
+	  !cfg.dbgUseLcvBusMem
+	) generate (
+	  in(Bool()) // signal indicating an active download
+	)
+	val ioctl_index = (
+	  !cfg.dbgUseLcvBusMem
+	) generate (
+	  in(UInt(15 + 1 bits))
+	)
 	  // menu index used to upload the file
-	val ioctl_wr = in(Bool())
-	val ioctl_addr = in(UInt(26 + 1 bits))
+	val ioctl_wr = (
+	  !cfg.dbgUseLcvBusMem
+	) generate (
+	  in(Bool())
+	)
+	val ioctl_addr = (
+	  !cfg.dbgUseLcvBusMem
+	) generate (
+	  in(UInt(26 + 1 bits))
 	  // in WIDE mode address will be incremented by 2
-	val ioctl_dout = in(UInt(ioctlDW + 1 bits))
-	val ioctl_upload = in(Bool()) // signal indicating an active upload
-	val ioctl_upload_req = out(Bool())
+	)
+	val ioctl_dout = (
+	  !cfg.dbgUseLcvBusMem
+	) generate (
+	  in(UInt(ioctlDW + 1 bits))
+	)
+	val ioctl_upload = (
+	  !cfg.dbgUseLcvBusMem
+	) generate (
+	  in(Bool()) // signal indicating an active upload
+	)
+	val ioctl_upload_req = (
+	  !cfg.dbgUseLcvBusMem
+	) generate (
+	  out(Bool())
 	  // request to save (must be supported on HPS side for specific core)
-	val ioctl_upload_index = out(UInt(7 + 1 bits))
-	val ioctl_din = out(UInt(ioctlDW + 1 bits))
-	val ioctl_rd = in(Bool())
-	val ioctl_file_ext = in(UInt(31 + 1 bits))
-	val ioctl_wait = out(Bool()) // rename this to `wait`
+	)
+	val ioctl_upload_index = (
+	  !cfg.dbgUseLcvBusMem
+	) generate (
+	  out(UInt(7 + 1 bits))
+	)
+	val ioctl_din = (
+	  !cfg.dbgUseLcvBusMem
+	) generate (
+	  out(UInt(ioctlDW + 1 bits))
+	)
+	val ioctl_rd = (
+	  !cfg.dbgUseLcvBusMem
+	) generate (
+	  in(Bool())
+	)
+	val ioctl_file_ext = (
+	  !cfg.dbgUseLcvBusMem
+	) generate (
+	  in(UInt(31 + 1 bits))
+	)
+	val ioctl_wait = (
+	  !cfg.dbgUseLcvBusMem
+	) generate (
+	  out(Bool()) // rename this to `wait`
+	)
 	//--------
 	val vgaPhys = out(
 	  LcvVgaPhys(
@@ -400,10 +454,59 @@ case class MeltedMoon(
   val io = MeltedMoonIo(cfg=cfg)
   noIoPrefix()
   //--------
-  val mySdramCtrl = LcvBusSdramCtrl(
-    cfg=cfg.sdramCtrlCfg
+  val mySdramCtrl = (
+	  !cfg.dbgUseLcvBusMem
+  ) generate (
+    LcvBusSdramCtrl(
+      cfg=cfg.sdramCtrlCfg
+    )
   )
-  mySdramCtrl.io.sdram <> io.sdram
+  if (!cfg.dbgUseLcvBusMem) {
+    mySdramCtrl.io.sdram <> io.sdram
+  }
+  val myDbgLcvBusMem = (
+    cfg.dbgUseLcvBusMem
+  ) generate {
+    val depth = 1 << (27 - 2) // 128 MiB
+
+    val myInitBigInt = {
+      //val depth = 1 << (16 - 4)
+      val tempArr = new ArrayBuffer[BigInt]()
+      tempArr ++= cfg.program.outpArr.view
+      while (tempArr.size < depth) {
+        tempArr += BigInt(0)
+      }
+      //val programSize = tempArr.size
+      //for (idx <- programSize until (1 << (16 - 4))) {
+      //  if (idx < /*1024*/0x800) {
+      //    //println(
+      //    //  s"idx < 0x800: ${idx}"
+      //    //)
+      //    //tempArr += BigInt(idx)
+      //    tempArr += BigInt(0)
+      //  } else {
+      //    //println(
+      //    //  s"idx < 0x800: ${idx}"
+      //    //)
+      //    //tempArr += BigInt(0)
+      //  }
+      //  //tempArr += BigInt(0)
+      //}
+      tempArr
+      //for (elem <- program.outpArr.view) {
+      //  tempArr +=
+      //}
+      //program.outpArr
+    }
+    LcvBusMem(
+      cfg=LcvBusMemConfig(
+        busCfg=cfg.sdramCtrlCfg.busCfg,
+        depth=depth,
+        initBigInt=Some(myInitBigInt),
+      )
+    )
+  }
+
   //--------
   def mySdramCtrlHostIdxFbDcache = 0//2//1////2 
   def mySdramCtrlHostIdxFbInit = 1
@@ -455,7 +558,11 @@ case class MeltedMoon(
   //  }
   //)
 
-  mySdramCtrl.io.bus <-/< mySdramCtrlBusArbiter.io.dev
+  if (!cfg.dbgUseLcvBusMem) {
+    mySdramCtrl.io.bus <-/< mySdramCtrlBusArbiter.io.dev
+  } else {
+    myDbgLcvBusMem.io.bus <-/< mySdramCtrlBusArbiter.io.dev
+  }
 
   def mySdramCtrlFbDcacheHost = (
     mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxFbDcache)
@@ -472,32 +579,57 @@ case class MeltedMoon(
   def mySdramCtrlNonFbDcacheHost = (
     mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxNonFbDcache)
   )
-  val sdramInitFifo = StreamFifo(
-    dataType=cloneOf(mySdramCtrlIoctlHost.h2dBus.payload),
-    depth=(
-      32,
-    ),
-    latency=2,
-    forFMax=true,
-    //pushClock=ioctlClkDomain,
-    //popClock=ClockDomain.current,
+  val sdramInitFifo = (
+    !cfg.dbgUseLcvBusMem
+  ) generate (
+    StreamFifo(
+      dataType=cloneOf(mySdramCtrlIoctlHost.h2dBus.payload),
+      depth=(
+        32,
+      ),
+      latency=2,
+      forFMax=true,
+      //pushClock=ioctlClkDomain,
+      //popClock=ClockDomain.current,
+    )
   )
+  if (cfg.dbgUseLcvBusMem) {
+    mySdramCtrlIoctlHost.h2dBus.valid := False
+    mySdramCtrlIoctlHost.h2dBus.payload := (
+      mySdramCtrlIoctlHost.h2dBus.payload.getZero
+    )
+    mySdramCtrlIoctlHost.d2hBus.ready := False
+  }
   //--------
   val cartDownload = (
-    io.ioctl_wr
-    && io.ioctl_download
-    && io.ioctl_index(5 downto 0) === 0x1
-    //&& codeIndex
-    //&& !codeIndex
-    //&& (io.ioctl_index =/= 4)
-    //&& (io.ioctl_index =/= 254)
+    Bool()
   )
+  if (!cfg.dbgUseLcvBusMem) {
+    cartDownload := (
+      io.ioctl_wr
+      && io.ioctl_download
+      && io.ioctl_index(5 downto 0) === 0x1
+      //&& codeIndex
+      //&& !codeIndex
+      //&& (io.ioctl_index =/= 4)
+      //&& (io.ioctl_index =/= 254)
+    )
+  } else {
+    cartDownload := (
+      RegNext(False, init=True)
+    )
+  }
 
-  val myInnerResetCond = (
-    io.ioctl_download
-    //cartDownload
-    || sdramInitFifo.io.pop.valid
-  )
+  val myInnerResetCond = Bool()
+  if (!cfg.dbgUseLcvBusMem) {
+    myInnerResetCond := (
+      io.ioctl_download
+      //cartDownload
+      || sdramInitFifo.io.pop.valid
+    )
+  } else {
+    myInnerResetCond := False
+  }
   //val rCartDownloadState = Reg(Bool(), init=False)
 
   val myMainResetCond = (
@@ -716,7 +848,9 @@ case class MeltedMoon(
     )
   }
   //--------
-  val ioctlArea = 
+  val ioctlArea = (
+    !cfg.dbgUseLcvBusMem
+  ) generate (
     new Area
     //new ResetArea(rose(myInnerResetCond), cumulative=true)
   {
@@ -899,7 +1033,7 @@ case class MeltedMoon(
     )
     mySdramCtrlIoctlHost.h2dBus <-/< sdramInitFifo.io.pop
     mySdramCtrlIoctlHost.d2hBus.ready := True
-  }
+  })
   //--------
   val fbAndDcacheArea = 
     new Area 
@@ -1186,7 +1320,9 @@ case class MeltedMoon(
     )
 
     //val myFbCpuHostClone = cloneOf(myFbArbCpuHost)
-    myDbusSlicer.io.host << cpu.io.lcvDbus
+    //myDbusSlicer.io.host << cpu.io.lcvDbus
+    myDbusSlicer.io.host.h2dBus <-/< cpu.io.lcvDbus.h2dBus
+    cpu.io.lcvDbus.d2hBus << myDbusSlicer.io.host.d2hBus
     val myNonFbDcache = (
       LcvBusCache(cfg=cfg.cpuCfg.shCfg.subCfg.lcvDbusEtcCfg),
     )
@@ -1264,7 +1400,7 @@ case class MeltedMoonSimDut(
   //meltedMoon.io.mainLogicReset := needResetMainLogic
   val ioctlArea = new Area {
     val sdramInitRamInitBigInt = {
-      val depth = 1 << (16 - 4)
+      //val depth = 1 << (16 - 4)
       val tempArr = new ArrayBuffer[BigInt]()
       tempArr ++= cfg.program.outpArr.view
       //while (tempArr.size < depth) {
@@ -1396,9 +1532,93 @@ case class MeltedMoonSimDut(
     )
   }
 }
+object MeltedMoonSim extends App {
+  val cfg = MeltedMoonConfig(
+    sdramCtrlUseAltddioOut=false,
+    dbgUseLcvBusMem=true,
+  )
+  
+  val numClkCycles = 8192 * 8 * 8 * 8 * 8 // * 8//2 //* 4//* 8 //* 4 * 8
+  val myCfg = Config.spinalWithFreq(cfg.clkRate) 
+
+  Config.simWithCfg(myCfg).compile({
+    //val myClkDomain = ClockDomain.internal(
+    //  name="core",
+    //  config=myCfg.defaultConfigForClockDomains,
+    //  withReset=true,
+    //  withSoftReset=true,
+    //)
+    //val myClockingArea = new ClockingArea(myClkDomain) {
+      val toComp = (
+        //SnowHouseCpuFramebufferDemo(
+        //  //program=testProgram.program,
+        //  //doConnExternIrq=false,
+        //  cfg=demoCfg,
+        //)
+        MeltedMoon(cfg=cfg)
+      )
+      //toComp.setDefinitionName(
+      //  s"SnowHouseCpuWithSharedRam_${testIdx}_${instrRamKind}"
+      //)
+      //val temp = toComp.clockDomain
+      //ClockDomain.current.reset.simPublic()
+      //toComp.clockDomain.reset.simPublic()
+      toComp
+    //}
+    //myClockingArea.toComp
+  }).doSim{dut => {
+
+    //println(
+    //  s"help me out:${(1e9 ns) / demoCfg.clkRate}"
+    //)
+    //println(
+    //  //s"${(((1 sec) / demoCfg.clkRate) * 1e9)} "
+    //  //s"${(((1 sec) / demoCfg.clkRate)) ns}"
+    //  s"${(((1 sec) / demoCfg.clkRate)) sec}"
+    //)
+    //dut.clockDomain.reset.simPublic()
+    dut.clockDomain.forkStimulus(
+      //(((1e9 ns) / demoCfg.clkRate) * 1.0).toInt //ns
+      //8
+      //((1e9) / demoCfg.clkRate)
+      (((1 sec) / cfg.clkRate)) sec //ns //ms
+    )
+    //dut.meltedMoon.ioctlClkDomain.forkStimulus(
+    //  (((1 sec) / cfg.demoCfg.clkRate)) sec //ns //ms
+    //)
+    //dut.meltedMoon.vgaClkDomain.forkStimulus(
+    //  //40
+    //  //(((1 sec) / cfg.demoCfg.vgaTimingInfo.pixelClk)) sec //ns //ms
+    //  (((1 sec) / cfg.demoCfg.clkRate)) sec //ns //ms
+    //)
+    for (i <- 0 until numClkCycles) {
+      dut.clockDomain.waitSampling()
+      //dut.meltedMoon.ioctlClkDomain.waitSampling()
+      //dut.meltedMoon.vgaClkDomain.waitSampling()
+      //dut.clockDomain.readResetWire #= dut.io.needResetMainLogic.toBoolean
+      //var tickVgaClk: Boolean = false
+      //if (
+      //  (
+      //    i
+      //    % (
+      //      //demoCfg.vgaTimingInfo.pixelClk / (1.0 MHz)
+      //      demoCfg.clkRate / demoCfg.vgaTimingInfo.pixelClk /// (1.0 MHz)
+      //    )
+      //  ) == 0
+      //) {
+      //  tickVgaClk = true
+      //  dut.vgaClkDomain.waitSampling()
+      //}
+      //println(
+      //  s"i:${i}, tickVgaClk:${tickVgaClk}"
+      //)
+    }
+  }}
+}
 object MeltedMoonSimDutSim extends App {
   val cfg = MeltedMoonConfig(
-    sdramCtrlUseAltddioOut=false
+    sdramCtrlUseAltddioOut=false,
+    dbgUseLcvBusMem=false,
   )
   
   val numClkCycles = 8192 * 8 * 8 * 8 * 8 // * 8//2 //* 4//* 8 //* 4 * 8

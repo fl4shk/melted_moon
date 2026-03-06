@@ -53,3 +53,4 @@ incremental_db/
 output_files/
 
 gtkwave
+other_tests.ignore
