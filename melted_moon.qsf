@@ -485,12 +485,12 @@ set_global_assignment -name PRE_MAPPING_RESYNTHESIS ON
 set_global_assignment -name DISABLE_REGISTER_MERGING_ACROSS_HIERARCHIES ON
 set_global_assignment -name REMOVE_REDUNDANT_LOGIC_CELLS ON
 set_global_assignment -name ROUTER_CLOCKING_TOPOLOGY_ANALYSIS ON
-set_global_assignment -name PLACEMENT_EFFORT_MULTIPLIER 1
+set_global_assignment -name PLACEMENT_EFFORT_MULTIPLIER 2
 set_global_assignment -name ECO_OPTIMIZE_TIMING ON
 set_global_assignment -name FINAL_PLACEMENT_OPTIMIZATION ALWAYS
 set_global_assignment -name FITTER_AGGRESSIVE_ROUTABILITY_OPTIMIZATION ALWAYS
-set_global_assignment -name PERIPHERY_TO_CORE_PLACEMENT_AND_ROUTING_OPTIMIZATION AUTO
-set_global_assignment -name QII_AUTO_PACKED_REGISTERS AUTO
+set_global_assignment -name PERIPHERY_TO_CORE_PLACEMENT_AND_ROUTING_OPTIMIZATION ON
+set_global_assignment -name QII_AUTO_PACKED_REGISTERS "SPARSE AUTO"
 set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC_FOR_AREA ON
 set_global_assignment -name PHYSICAL_SYNTHESIS_EFFORT EXTRA
 set_global_assignment -name ROUTER_REGISTER_DUPLICATION ON
@@ -530,8 +530,8 @@ set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_RO
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name QIP_FILE rtl/pll_test.qip
 set_global_assignment -name SIP_FILE rtl/pll_test.sip
-set_global_assignment -name STRATIXII_CARRY_CHAIN_LENGTH 4
+set_global_assignment -name STRATIXII_CARRY_CHAIN_LENGTH 32
 set_global_assignment -name FITTER_EFFORT "STANDARD FIT"
 set_global_assignment -name SIGNALTAP_FILE stp2.stp
-set_global_assignment -name SLD_FILE db/stp2_auto_stripped.stp
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name SLD_FILE db/stp2_auto_stripped.stp
