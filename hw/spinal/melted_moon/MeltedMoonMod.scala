@@ -1140,12 +1140,44 @@ case class MeltedMoon(
   //    VBLANK
   //    = newElement();
   //}
+  case class MyDbgCpuDbusSearchElem(
+    addr: Long,
+    data: Long,
+  ) {
+  }
+  val myCpuDbusWriteSearchArr = (
+    cfg.dbgUseLcvBusMem
+  ) generate {
+    val tempArr = new ArrayBuffer[MyDbgCpuDbusSearchElem]()
+    tempArr += MyDbgCpuDbusSearchElem(addr=0x2ffffa4, data=0x4006c0)
+    tempArr
+  }
+  val myCpuDbusWriteSearchCmpEqVec = (
+    cfg.dbgUseLcvBusMem
+  ) generate (
+    Vec.fill(myCpuDbusWriteSearchArr.size)(
+      Bool()
+    )
+  )
   val cpuArea = new ResetArea(
     myMainResetCond,
     cumulative=true
   ) {
     //--------
     val cpu = SnowHouseCpuWithoutRam(program=cfg.testProgram.program)
+
+    if (cfg.dbgUseLcvBusMem) {
+      for (idx <- 0 until myCpuDbusWriteSearchArr.size) {
+        val myAddr = myCpuDbusWriteSearchArr(idx).addr
+        val myData = myCpuDbusWriteSearchArr(idx).data
+        myCpuDbusWriteSearchCmpEqVec(idx) := (
+          cpu.io.lcvDbus.h2dBus.fire
+          && cpu.io.lcvDbus.h2dBus.isWrite
+          && cpu.io.lcvDbus.h2dBus.addr === myAddr
+          && cpu.io.lcvDbus.h2dBus.data === myData
+        )
+      }
+    }
     //--------
     val irqCtrl = LcvBusIrqCtrl(
       cfg=LcvBusIrqCtrlConfig(
