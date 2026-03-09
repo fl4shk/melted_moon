@@ -1185,7 +1185,8 @@ case class MeltedMoon(
         depth=2,
       )
     )
-    cpu.io.idsIraIrq.nextValid := irqCtrl.io.dstIrq
+    cpu.io.idsIraIrq.nextValid := irqCtrl.io.dstIrq.nextValid
+    irqCtrl.io.dstIrq.ready := cpu.io.idsIraIrq.ready
 
     def myDoVblankIrq = otherVgaArea.myDoVblankIrq
     irqCtrl.io.srcIrqVec(0) := myDoVblankIrq
