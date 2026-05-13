@@ -321,9 +321,9 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(IOCTL_WIDE)) hps_io
   .ioctl_addr(ioctl_addr),
   .ioctl_dout(ioctl_dout),
   .ioctl_upload(ioctl_upload),
-  //.ioctl_upload_req(ioctl_upload_req),
-  //.ioctl_upload_index(ioctl_upload_index),
-  //.ioctl_din(ioctl_din),
+  .ioctl_upload_req(ioctl_upload_req),
+  .ioctl_upload_index(ioctl_upload_index),
+  .ioctl_din(ioctl_din),
   .ioctl_rd(ioctl_rd),
   .ioctl_file_ext(ioctl_file_ext),
   .ioctl_wait(ioctl_wait)
@@ -338,18 +338,38 @@ wire clk_sys;
 //assign clk_cpu = CLK_50M;
 //assign clk_cpu = clk_sys;
 //wire vgaClk_clk;
+wire pll_locked;
 pll pll
 (
 	.refclk(CLK_50M),
 	.rst(0),
-	.outclk_0(clk_sys)//,
+	.outclk_0(clk_sys),
 	//.outclk_1(
 	//  //clk_cpu
 	//  vgaClk_clk
 	//)
+	.locked(pll_locked)
 );
 
-wire reset = RESET | status[0] | buttons[1];
+wire reset_main = RESET | status[0] | buttons[1]; //| !pll_locked;
+
+//logic prev_ioctl_download = 1'b0;
+////always_ff @(posedge clk_sys or posedge reset_main) begin
+////  if (reset_main) begin
+////    prev_ioctl_download <= 1'b0;
+////  end else begin
+////    prev_ioctl_download <= ioctl_download;
+////  end
+////end
+////wire my_ioctl_download_rose = ioctl_download && !prev_ioctl_download;
+//logic my_ioctl_download_rose = 1'b0;
+//always_ff @(posedge clk) begin
+//  prev_ioctl_download <= ioctl_download;
+//  my_ioctl_download_rose <= ioctl_download && !prev_ioctl_download;
+//end
+
+wire reset = reset_main; //|| my_ioctl_download_rose;
+//wire reset = reset_main || my_ioctl_download_rose;
 //pll_test pll_test
 //(
 //	.refclk(CLK_50M),
@@ -380,6 +400,7 @@ melted_moon my_melted_moon
 	
 	.pal(status[2]),
 	.scandouble(forced_scandoubler),
+	.pll_locked(pll_locked),
 
 	//.ce_pix(ce_pix),
 

@@ -23,14 +23,17 @@ object Config {
   //  ),
   //  onlyStdLogicVectorAtTopLevelIo = true
   //)
-  def spinalWithFreq(
-    clkRate: HertzNumber
+  def spinalExt(
+    clkRate: HertzNumber,
+    targetDirectory: String="hw/gen",
+    //isMister: Boolean=false,
+    resetKind: ResetKind=SYNC,
   ) = (
     SpinalConfig(
-      targetDirectory="hw/gen",
+      targetDirectory=targetDirectory,
       defaultConfigForClockDomains=ClockDomainConfig(
         resetActiveLevel=HIGH,
-        resetKind=SYNC,
+        resetKind=resetKind,
       ),
       formalAsserts=true,
       defaultClockDomainFrequency=FixedFrequency(clkRate),
@@ -38,10 +41,20 @@ object Config {
       //.addStandardMemBlackboxing(blackboxAllWhatsYouCan)
   )
 
-  def simWithFreq(
+  def simExt(
     clkRate: HertzNumber,
+    targetDirectory: String="hw/gen",
+    withFstWave: Boolean=true,
   ) = {
-    SimConfig.withConfig(spinalWithFreq(clkRate=clkRate)).withFstWave
+    val ret = SimConfig.withConfig(spinalExt(
+      clkRate=clkRate,
+      targetDirectory=targetDirectory,
+    ))
+    if (withFstWave) (
+      ret.withFstWave
+    ) else (
+      ret
+    )
   }
 
   //def sim = SimConfig.withConfig(spinal).withFstWave
@@ -59,9 +72,15 @@ object Config {
       //.addStandardMemBlackboxing(blackboxAllWhatsYouCan)
   )
   def simWithCfg(
-    cfg: SpinalConfig
+    cfg: SpinalConfig,
+    withFstWave: Boolean=true,
   ) = {
-    SimConfig.withConfig(cfg).withFstWave
+    val ret = SimConfig.withConfig(cfg)
+    if (withFstWave) (
+      ret.withFstWave
+    ) else (
+      ret
+    )
   }
   def sim = simWithCfg(spinal)
 

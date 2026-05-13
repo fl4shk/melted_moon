@@ -8,6 +8,7 @@ module melted_moon
 	
 	input         pal,
 	input         scandouble,
+	input         pll_locked,
 
   output wire  [7:0]   vgaPhys_col_r,
   output wire  [7:0]   vgaPhys_col_g,
@@ -90,12 +91,26 @@ module melted_moon
 //reg pal_cpu_reg1; //= 1'b0;
 //reg pal_cpu_reg2; //= 1'b0
 
-reg reset_sys_reg = 1'b0;
-reg reset_sys_reg1 = 1'b0;
-reg reset_sys_reg2 = 1'b0;
-reg reset_cpu_reg = 1'b0; //= 1'b0;
-reg reset_cpu_reg1 = 1'b0; //= 1'b0;
-reg reset_cpu_reg2 = 1'b0; //= 1'b0;
+//localparam SOFT_RESET_CNT_WIDTH = 17;
+//localparam SOFT_RESET_CNT_MSB_POS = SOFT_RESET_CNT_WIDTH - 1;
+//reg [SOFT_RESET_CNT_MSB_POS:0] soft_reset_cnt = (
+//  1 << SOFT_RESET_CNT_MSB_POS
+//);
+
+reg soft_reset_sys_reg = 1'b0;
+reg soft_reset_sys_reg1 = 1'b0;
+reg soft_reset_sys_reg2 = 1'b0;
+//reg prev_soft_reset_cpu_reg = 1'b0;
+reg soft_reset_cpu_reg = 1'b0; //= 1'b0;
+reg soft_reset_cpu_reg1 = 1'b0; //= 1'b0;
+reg soft_reset_cpu_reg2 = 1'b0; //= 1'b0;
+
+reg reset_sys_reg = 1'b1;
+reg reset_sys_reg1 = 1'b1;
+reg reset_sys_reg2 = 1'b1;
+reg reset_cpu_reg = 1'b1; //= 1'b0;
+reg reset_cpu_reg1 = 1'b1; //= 1'b0;
+reg reset_cpu_reg2 = 1'b1; //= 1'b0;
 
 //always @(posedge clk) begin
 //	if (reset) begin
@@ -115,98 +130,57 @@ reg reset_cpu_reg2 = 1'b0; //= 1'b0;
 //	end
 //end
 //
+//wire please_do_soft_reset = !soft_reset_cnt[SOFT_RESET_CNT_MSB_POS];
 
 always @(posedge clk) begin
-  reset_sys_reg2 <= reset;
-  reset_sys_reg1 <= reset_sys_reg2;
-  reset_sys_reg <= reset_sys_reg1;
+  //if (pll_locked) begin
+    soft_reset_sys_reg2 <= reset || ioctl_download;//1'b0;//reset;
+    soft_reset_sys_reg1 <= soft_reset_sys_reg2;
+    soft_reset_sys_reg <= soft_reset_sys_reg1;
+  //end
 end
 always @ (posedge clk/*clk_cpu*/) begin
-  reset_cpu_reg2 <= reset_sys_reg;
-  reset_cpu_reg1 <= reset_cpu_reg2;
-  reset_cpu_reg <= reset_cpu_reg1;
+  //if (pll_locked) begin
+    soft_reset_cpu_reg2 <= soft_reset_sys_reg;//reset;//reset_sys_reg;
+    soft_reset_cpu_reg1 <= soft_reset_cpu_reg2;
+    soft_reset_cpu_reg <= soft_reset_cpu_reg1;
+    //prev_soft_reset_cpu_reg <= soft_reset_cpu_reg;
+    //reset_cpu_reg1 <= reset;
+    //reset_cpu_reg <= reset;//reset_cpu_reg1; //reset;
+    //if (
+    //  //!please_do_soft_reset
+    //  //&& 
+    //  soft_reset_cpu_reg
+    //  //&& !prev_soft_reset_cpu_reg
+    //) begin
+    //  soft_reset_cnt <= 0;
+    //end else if (
+    //  //!soft_reset_cnt[SOFT_RESET_CNT_MSB_POS]
+    //  please_do_soft_reset
+    //) begin
+    //  soft_reset_cnt <= soft_reset_cnt + 1;
+    //end
+  //end
 end
 
-//always @(posedge clk_cpu) begin
-//  if (reset_cpu_reg) begin
-//    pal_cpu_reg2 <= 1'b0;
-//    pal_cpu_reg1 <= 1'b0;
-//    pal_cpu_reg <= 1'b0;
-//    cpu_io_regFileWriteData_cpu_reg2 <= 32'd0;
-//    cpu_io_regFileWriteData_cpu_reg1 <= 32'd0;
-//    cpu_io_regFileWriteData_cpu_reg <= 32'd0;
-//  end else begin
-//    pal_cpu_reg2 <= pal_sys_reg;
-//    pal_cpu_reg1 <= pal_cpu_reg2;
-//    pal_cpu_reg <= pal_cpu_reg1;
-//    cpu_io_regFileWriteData_cpu_reg2 <= cpu_io_regFileWriteData[0];
-//    cpu_io_regFileWriteData_cpu_reg1 <= cpu_io_regFileWriteData_cpu_reg2;
-//    cpu_io_regFileWriteData_cpu_reg <= cpu_io_regFileWriteData_cpu_reg1;
-//  end
-//end
 
-//lfsr random(
-//	.clk(clk),
-//	.reset(reset),
-//	.rnd(rnd)
-//);
+always @(posedge clk) begin
+  //if (pll_locked) begin
+    reset_sys_reg2 <= 1'b0;//reset;
+    reset_sys_reg1 <= reset_sys_reg2;
+    reset_sys_reg <= reset_sys_reg1;
+  //end
+end
+always @ (posedge clk/*clk_cpu*/) begin
+  //if (pll_locked) begin
+    reset_cpu_reg2 <= reset_sys_reg;//reset;//reset_sys_reg;
+    reset_cpu_reg1 <= reset_cpu_reg2;
+    reset_cpu_reg <= reset_cpu_reg1;
+    //reset_cpu_reg1 <= reset;
+    //reset_cpu_reg <= reset;//reset_cpu_reg1; //reset;
+  //end
+end
 
-//assign rnd[63:33] = rnd_inp[63:33];
-//SnowHouseCpuWithDualRam cpu_etc(
-//	.io_idsIraIrq_nextValid(pal_cpu_reg),
-//	.io_idsIraIrq_ready(cpu_io_idsIraIrq_ready),
-//	.io_regFileWriteData(cpu_io_regFileWriteData),
-//	.reset(reset_cpu_reg),
-//	.clk(clk_cpu)
-//);
-//LcvBusNonCoherentDataCacheWithSdramCtrl cacheTesterWithSdramCtrl(
-//  .io_dq(sdram_DQ),
-//  .io_a(sdram_A),
-//  .io_dqml(sdram_DQML),
-//  .io_dqmh(sdram_DQMH),
-//  .io_ba(sdram_BA),
-//  .io_nCs(sdram_nCS),
-//  .io_nWe(sdram_nWE),
-//  .io_nRas(sdram_nRAS),
-//  .io_nCas(sdram_nCAS),
-//  .io_cke(sdram_CKE),
-//  .io_clk(sdram_CLK),
-//  .clk(clk)//,
-//  //.reset(reset_cpu_reg)
-//);
-//wire my_clk = clk;
-//reg my_reset = 1'b1;
-//always @(posedge my_clk) begin
-//  my_reset = 1'b0;
-//end
-
-//wire my_vgaClk_clk = clk;//vgaClk_clk;//clk;
-//reg my_vgaClk_reset = 1'b1;
-//always @(posedge my_vgaClk_clk) begin
-//  my_vgaClk_reset = 1'b0;
-//end
-
-//localparam IOCTL_RESET_WIDTH = 4;
-//reg [IOCTL_RESET_WIDTH - 1:0] my_ioctl_reset = {IOCTL_RESET_WIDTH{1'b1}};
-//wire my_ioctl_download_etc = (
-//    reset_cpu_reg
-//    || ioctl_download
-//    //|| ioctl_wr
-//);
-//
-//always @(posedge clk) begin
-//  integer i;
-//  //if (my_seen_ioctl_download) begin
-//    my_ioctl_reset[IOCTL_RESET_WIDTH - 1] = (
-//      //1'b1
-//      my_ioctl_download_etc
-//    );
-//  //end
-//
-//  for (i=0; i<IOCTL_RESET_WIDTH - 1; i=i+1) begin
-//    my_ioctl_reset[i] = my_ioctl_reset[i + 1];
-//  end
-//end
 wire [12:0] temp_sdram_a;
 //wire temp_sdram_dqmh;
 //wire temp_sdram_dqml;
@@ -216,12 +190,22 @@ wire [12:0] temp_sdram_a;
 // NOTE: MiSTer-specific SDRAM board DQM stuff
 assign {sdram_DQMH, sdram_DQML} = temp_sdram_a[12:11];
 assign sdram_A = temp_sdram_a;
+wire temp_ioctl_myWait;
+assign ioctl_wait = (
+  //|({
+  //  //reset,
+  //  reset_sys_reg2,
+  //  reset_sys_reg1,
+  //  reset_sys_reg,
+  //  reset_cpu_reg2,
+  //  reset_cpu_reg1,
+  //  reset_cpu_reg,
+    temp_ioctl_myWait
+  //})
+);
 
 MeltedMoon myMeltedMoon(
-  //.mainLogicReset(
-  //  //my_ioctl_reset[0]
-  //  reset_cpu_reg
-  //),
+  .pllLocked(pll_locked),
   .sdram_dq(sdram_DQ),
   .sdram_a(temp_sdram_a),
   //.sdram_dqml(temp_sdram_dqml),
@@ -239,12 +223,15 @@ MeltedMoon myMeltedMoon(
   .ioctl_addr(ioctl_addr),
   .ioctl_dout(ioctl_dout),
   .ioctl_upload(ioctl_upload),
-  //.ioctl_upload_req(ioctl_upload_req),
-  //.ioctl_upload_index(ioctl_upload_index),
-  //.ioctl_din(ioctl_din),
+  .ioctl_upload_req(ioctl_upload_req),
+  .ioctl_upload_index(ioctl_upload_index),
+  .ioctl_din(ioctl_din),
   .ioctl_rd(ioctl_rd),
   .ioctl_file_ext(ioctl_file_ext),
-  .ioctl_wait(ioctl_wait),
+  .ioctl_myWait(
+    temp_ioctl_myWait
+    //ioctl_wait
+  ),
   .vgaPhys_col_r(vgaPhys_col_r),
   .vgaPhys_col_g(vgaPhys_col_g),
   .vgaPhys_col_b(vgaPhys_col_b),
@@ -262,6 +249,10 @@ MeltedMoon myMeltedMoon(
     //my_reset
     //reset_sys_reg
     reset_cpu_reg
+  ),
+  .softReset(
+    soft_reset_cpu_reg
+    //|| please_do_soft_reset
   )
 );
 

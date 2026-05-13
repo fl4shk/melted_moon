@@ -54,3 +54,4 @@ output_files/
 
 gtkwave
 other_tests.ignore
+*.stp
