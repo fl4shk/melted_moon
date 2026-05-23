@@ -97,13 +97,13 @@ module melted_moon
 //  1 << SOFT_RESET_CNT_MSB_POS
 //);
 
-reg soft_reset_sys_reg = 1'b0;
-reg soft_reset_sys_reg1 = 1'b0;
-reg soft_reset_sys_reg2 = 1'b0;
-//reg prev_soft_reset_cpu_reg = 1'b0;
-reg soft_reset_cpu_reg = 1'b0; //= 1'b0;
-reg soft_reset_cpu_reg1 = 1'b0; //= 1'b0;
-reg soft_reset_cpu_reg2 = 1'b0; //= 1'b0;
+//reg soft_reset_sys_reg = 1'b0;
+//reg soft_reset_sys_reg1 = 1'b0;
+//reg soft_reset_sys_reg2 = 1'b0;
+////reg prev_soft_reset_cpu_reg = 1'b0;
+//reg soft_reset_cpu_reg = 1'b0; //= 1'b0;
+//reg soft_reset_cpu_reg1 = 1'b0; //= 1'b0;
+//reg soft_reset_cpu_reg2 = 1'b0; //= 1'b0;
 
 reg reset_sys_reg = 1'b1;
 reg reset_sys_reg1 = 1'b1;
@@ -132,36 +132,39 @@ reg reset_cpu_reg2 = 1'b1; //= 1'b0;
 //
 //wire please_do_soft_reset = !soft_reset_cnt[SOFT_RESET_CNT_MSB_POS];
 
-always @(posedge clk) begin
-  //if (pll_locked) begin
-    soft_reset_sys_reg2 <= reset || ioctl_download;//1'b0;//reset;
-    soft_reset_sys_reg1 <= soft_reset_sys_reg2;
-    soft_reset_sys_reg <= soft_reset_sys_reg1;
-  //end
-end
-always @ (posedge clk/*clk_cpu*/) begin
-  //if (pll_locked) begin
-    soft_reset_cpu_reg2 <= soft_reset_sys_reg;//reset;//reset_sys_reg;
-    soft_reset_cpu_reg1 <= soft_reset_cpu_reg2;
-    soft_reset_cpu_reg <= soft_reset_cpu_reg1;
-    //prev_soft_reset_cpu_reg <= soft_reset_cpu_reg;
-    //reset_cpu_reg1 <= reset;
-    //reset_cpu_reg <= reset;//reset_cpu_reg1; //reset;
-    //if (
-    //  //!please_do_soft_reset
-    //  //&& 
-    //  soft_reset_cpu_reg
-    //  //&& !prev_soft_reset_cpu_reg
-    //) begin
-    //  soft_reset_cnt <= 0;
-    //end else if (
-    //  //!soft_reset_cnt[SOFT_RESET_CNT_MSB_POS]
-    //  please_do_soft_reset
-    //) begin
-    //  soft_reset_cnt <= soft_reset_cnt + 1;
-    //end
-  //end
-end
+//always @(posedge clk) begin
+//  //if (pll_locked) begin
+//    soft_reset_sys_reg2 <= reset || ioctl_download;//1'b0;//reset;
+//    soft_reset_sys_reg1 <= soft_reset_sys_reg2;
+//    soft_reset_sys_reg <= soft_reset_sys_reg1;
+//  //end
+//end
+//always @ (posedge clk/*clk_cpu*/) begin
+//  //if (pll_locked) begin
+//    soft_reset_cpu_reg2 <= soft_reset_sys_reg;//reset;//reset_sys_reg;
+//    soft_reset_cpu_reg1 <= soft_reset_cpu_reg2;
+//    soft_reset_cpu_reg <= soft_reset_cpu_reg1;
+//    //prev_soft_reset_cpu_reg <= soft_reset_cpu_reg;
+//    //reset_cpu_reg1 <= reset;
+//    //reset_cpu_reg <= reset;//reset_cpu_reg1; //reset;
+//    //if (
+//    //  //!please_do_soft_reset
+//    //  //&& 
+//    //  soft_reset_cpu_reg
+//    //  //&& !prev_soft_reset_cpu_reg
+//    //) begin
+//    //  soft_reset_cnt <= 0;
+//    //end else if (
+//    //  //!soft_reset_cnt[SOFT_RESET_CNT_MSB_POS]
+//    //  please_do_soft_reset
+//    //) begin
+//    //  soft_reset_cnt <= soft_reset_cnt + 1;
+//    //end
+//  //end
+//end
+wire my_soft_reset = (
+  reset || ioctl_download
+);
 
 
 always @(posedge clk) begin
@@ -193,13 +196,20 @@ assign sdram_A = temp_sdram_a;
 wire temp_ioctl_myWait;
 assign ioctl_wait = (
   //|({
-  //  //reset,
-  //  reset_sys_reg2,
-  //  reset_sys_reg1,
-  //  reset_sys_reg,
-  //  reset_cpu_reg2,
-  //  reset_cpu_reg1,
-  //  reset_cpu_reg,
+    //reset,
+    //reset_sys_reg2,
+    //reset_sys_reg1,
+    //reset_sys_reg,
+    //reset_cpu_reg2,
+    //reset_cpu_reg1,
+    //reset_cpu_reg,
+
+    //soft_reset_sys_reg2,
+    //soft_reset_sys_reg1,
+    //soft_reset_sys_reg,
+    //soft_reset_cpu_reg2,
+    //soft_reset_cpu_reg1,
+    //soft_reset_cpu_reg,
     temp_ioctl_myWait
   //})
 );
@@ -251,7 +261,8 @@ MeltedMoon myMeltedMoon(
     reset_cpu_reg
   ),
   .softReset(
-    soft_reset_cpu_reg
+    my_soft_reset
+    //soft_reset_cpu_reg
     //|| please_do_soft_reset
   )
 );
