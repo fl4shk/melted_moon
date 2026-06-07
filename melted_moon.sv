@@ -351,7 +351,8 @@ pll pll
 	.locked(pll_locked)
 );
 
-wire reset_main = RESET | status[0] | buttons[1]; //| !pll_locked;
+//wire reset_main = RESET | status[0] | buttons[1]; //| !pll_locked;
+wire reset_main = status[0] | buttons[1]; //| !pll_locked;
 
 //logic prev_ioctl_download = 1'b0;
 ////always_ff @(posedge clk_sys or posedge reset_main) begin

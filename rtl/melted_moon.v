@@ -49,7 +49,6 @@ module melted_moon
 	input [31:0]  ioctl_file_ext,
 	output        ioctl_wait,
 
-
 	output        sdram_CLK,
 	output        sdram_CKE,
 	output [12:0] sdram_A,
@@ -162,17 +161,21 @@ reg reset_cpu_reg2 = 1'b1; //= 1'b0;
 //    //end
 //  //end
 //end
-wire my_soft_reset = (
-  reset || ioctl_download
+wire my_soft_reset_0 = (
+  //reset || 
+  ioctl_download
+);
+wire my_soft_reset_1 = (
+  reset
 );
 
 
 always @(posedge clk) begin
-  //if (pll_locked) begin
-    reset_sys_reg2 <= 1'b0;//reset;
-    reset_sys_reg1 <= reset_sys_reg2;
-    reset_sys_reg <= reset_sys_reg1;
-  //end
+  if (pll_locked) begin
+    reset_sys_reg2 <= 1'b0;//reset;//(reset || my_soft_reset_0);//1'b0;//reset;
+  end
+  reset_sys_reg1 <= reset_sys_reg2;
+  reset_sys_reg <= reset_sys_reg1;
 end
 always @ (posedge clk/*clk_cpu*/) begin
   //if (pll_locked) begin
@@ -260,8 +263,13 @@ MeltedMoon myMeltedMoon(
     //reset_sys_reg
     reset_cpu_reg
   ),
-  .softReset(
-    my_soft_reset
+  .softReset_0(
+    my_soft_reset_0
+    //soft_reset_cpu_reg
+    //|| please_do_soft_reset
+  ),
+  .softReset_1(
+    my_soft_reset_1
     //soft_reset_cpu_reg
     //|| please_do_soft_reset
   )
