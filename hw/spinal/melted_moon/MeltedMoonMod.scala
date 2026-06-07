@@ -1217,7 +1217,11 @@ case class MeltedMoon(
     new ResetArea(
       //myCpuAreaSoftReset,
       ////mkMyCpuAreaSoftReset(0),
-      rMyCpuResetState,
+      History[Bool](
+        that=rMyCpuResetState,
+        length=7,
+        init=True,
+      ).last,
       //fell(rMyCpuResetState),
       cumulative=false//true//false//true
     )
