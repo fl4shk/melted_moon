@@ -1563,6 +1563,7 @@ case class MeltedMoonLcvBusToDdramBridge(
       when (io.lcvBus.d2hBus.ready) {
         rWrState := WR_STATE_IDLE
       }
+      rWrDdramBurstCnt.valid := False
     }
     default {
     }
