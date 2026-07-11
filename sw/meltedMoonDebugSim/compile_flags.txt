@@ -3,3 +3,4 @@
 -I/usr/share/verilator/include
 -I/usr/share/verilator/include/vltstd
 -Iverilated
+-DRISCV_CPU_DEBUG=1

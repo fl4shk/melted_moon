@@ -28,6 +28,7 @@ object Config {
     targetDirectory: String="hw/gen",
     //isMister: Boolean=false,
     resetKind: ResetKind=SYNC,
+    oneFilePerComponent: Boolean=false,
   ) = (
     SpinalConfig(
       targetDirectory=targetDirectory,
@@ -37,6 +38,7 @@ object Config {
       ),
       formalAsserts=true,
       defaultClockDomainFrequency=FixedFrequency(clkRate),
+      oneFilePerComponent=oneFilePerComponent,
     )
       //.addStandardMemBlackboxing(blackboxAllWhatsYouCan)
   )

@@ -1,0 +1,1155 @@
+#ifndef RV32_DIS_HPP
+#define RV32_DIS_HPP
+
+#include "misc_includes.hpp"
+
+using Field = std::pair<size_t, size_t>;
+static consteval inline size_t field_width(
+    const Field& field
+) {
+    if (field.second < field.first) {
+        return field.first - field.second + size_t(1u);
+    } else {
+        return field.second - field.first + size_t(1u);
+    }
+}
+class Rv32RType final {
+public:     // types
+    static constexpr Field field_opcode = {6u, 0u};
+    static constexpr Field field_rd = {11u, 7u};
+    static constexpr Field field_funct3 = {14u, 12u};
+    static constexpr Field field_rs1 = {19, 15};
+    static constexpr Field field_rs2 = {24, 20};
+    static constexpr Field field_funct7 = {31, 25};
+
+    class EncInstr final {
+    public:     // variables
+        u32 opcode: field_width(field_opcode);
+        u32 rd: field_width(field_rd);
+        u32 funct3: field_width(field_funct3);
+        u32 rs1: field_width(field_rs1);
+        u32 rs2: field_width(field_rs2);
+        u32 funct7: field_width(field_funct7);
+    };
+
+    class OpFields final {
+    public:     // variables
+        u32 op;
+        u32 f3;
+        u32 f7;
+    };
+
+    class Op final {
+    public:     // constants
+        //--------
+        static constexpr OpFields
+            AddRdRs1Rs2 = {.op=0x33, .f3=0x0, .f7=0x00},
+            SubRdRs1Rs2 = {.op=0x33, .f3=0x0, .f7=0x20},
+            XorRdRs1Rs2 = {.op=0x33, .f3=0x4, .f7=0x00},
+            OrRdRs1Rs2 = {.op=0x33, .f3=0x6, .f7=0x00},
+            AndRdRs1Rs2 = {.op=0x33, .f3=0x7, .f7=0x00},
+            SllRdRs1Rs2 = {.op=0x33, .f3=0x1, .f7=0x0},
+            SrlRdRs1Rs2 = {.op=0x33, .f3=0x5, .f7=0x00},
+            SraRdRs1Rs2 = {.op=0x33, .f3=0x5, .f7=0x20},
+            SltRdRs1Rs2 = {.op=0x33, .f3=0x2, .f7=0x00},
+            SltuRdRs1Rs2 = {.op=0x33, .f3=0x3, .f7=0x00},
+            //------
+            MulRdRs1Rs2 = {.op=0x33, .f3=0x0, .f7=0x01},
+            MulhRdRs1Rs2 = {.op=0x33, .f3=0x1, .f7=0x01},
+            MulhsuRdRs1Rs2 = {.op=0x33, .f3=0x2, .f7=0x01},
+            MulhuRdRs1Rs2 = {.op=0x33, .f3=0x3, .f7=0x01},
+            DivRdRs1Rs2 = {.op=0x33, .f3=0x4, .f7=0x01},
+            DivuRdRs1Rs2 = {.op=0x33, .f3=0x5, .f7=0x01},
+            RemRdRs1Rs2 = {.op=0x33, .f3=0x6, .f7=0x01},
+            RemuRdRs1Rs2 = {.op=0x33, .f3=0x7, .f7=0x01};
+        //--------
+    };
+};
+
+class Rv32IType final {
+public:     // types
+    static constexpr Field field_opcode = {6, 0};
+    static constexpr Field field_rd = {11, 7};
+    static constexpr Field field_funct3 = {14, 12};
+    static constexpr Field field_rs1 = {19, 15};
+    static constexpr Field field_imm11dt0 = {31, 20};
+
+    //val opcode = 0x13
+
+    class EncInstr final {
+    public:     // variables
+        u32 opcode: field_width(field_opcode);
+        u32 rd: field_width(field_rd);
+        u32 funct3: field_width(field_funct3);
+        u32 rs1: field_width(field_rs1);
+        u32 imm11dt0: field_width(field_imm11dt0);
+
+        inline i32 my_temp_imm() const {
+            //return i32(imm11dt0);
+            return i32(sign_extend(
+                u32(imm11dt0), 12u
+            ));
+        }
+
+        inline i32 my_imm11dt5() const {
+            //return i32(i32(imm11dt0) >> 5u);
+            return i32(zero_extend(
+                u64(imm11dt0) >> 5u,
+                field_width(Field(11u, 5u))
+            ));
+        }
+        inline i32 my_imm4dt0() const {
+            return i32(zero_extend(imm11dt0, 5u));
+        }
+
+        //def myTempImm(
+        //): SInt = (
+        //imm11dt0.asSInt.resize(Riscv32Op.mainWidth)
+        //)
+
+        //def myImm11dt5(
+        //): UInt = (
+        //imm11dt0(11 downto 5)
+        //)
+        //def myImm4dt0(
+        //): UInt = (
+        //imm11dt0(4 downto 0).resize(Riscv32Op.mainWidth)
+        //)
+    };
+
+    class OpFields final {
+    public:  // variables
+        u32 op;
+        u32 f3;
+        //std::optional<u32> imm11dt5 = std::nullopt;
+        i32 imm11dt5;
+    };
+
+    class Op final {
+    public:     // constants
+        //--------
+        static constexpr OpFields
+            AddiRdRs1Imm = {.op=0x13, .f3=0x0, .imm11dt5=-1},
+            XoriRdRs1Imm = {.op=0x13, .f3=0x4, .imm11dt5=-1},
+            OriRdRs1Imm = {.op=0x13, .f3=0x6, .imm11dt5=-1},
+            AndiRdRs1Imm = {.op=0x13, .f3=0x7, .imm11dt5=-1},
+
+            // rd = rs1 << imm[0:4]
+            SlliRdRs1Imm = {.op=0x13, .f3=0x1, .imm11dt5=0x00},
+
+            // rd = rs1 >> imm[0:4]
+            SrliRdRs1Imm = {.op=0x13, .f3=0x5, .imm11dt5=0x00},
+
+            // rd = rs1 >> imm[0:4] msb-extends
+            SraiRdRs1Imm = {.op=0x13, .f3=0x5, .imm11dt5=0x20},
+
+            SltiRdRs1Imm = {.op=0x13, .f3=0x2, .imm11dt5=-1},
+            SltiuRdRs1Imm = {.op=0x13, .f3=0x3, .imm11dt5=-1},
+            //--------
+            LbRdRs1Imm = {.op=0x03, .f3=0x0, .imm11dt5=-1},
+            LhRdRs1Imm = {.op=0x03, .f3=0x1, .imm11dt5=-1},
+            LwRdRs1Imm = {.op=0x03, .f3=0x2, .imm11dt5=-1},
+            LbuRdRs1Imm = {.op=0x03, .f3=0x4, .imm11dt5=-1},
+            LhuRdRs1Imm = {.op=0x03, .f3=0x5, .imm11dt5=-1},
+            //--------
+            // rd = PC+4; PC = rs1 + imm
+            JalrRdRs1Imm = {.op=0x67, .f3=0x0, .imm11dt5=-1};
+        //--------
+    };
+};
+
+class Rv32SType final {
+public:     // variables
+    static constexpr Field field_opcode = {6, 0};
+    static constexpr Field field_imm4dt0 = {11, 7};
+    static constexpr Field field_funct3 = {14, 12};
+    static constexpr Field field_rs1 = {19, 15};
+    static constexpr Field field_rs2 = {24, 20};
+    static constexpr Field field_imm11dt5 = {31, 25};
+
+    class EncInstr final {
+    public:     // variables
+        u32 opcode: field_width(field_opcode);
+        u32 imm4dt0: field_width(field_imm4dt0);
+        u32 funct3: field_width(field_funct3);
+        u32 rs1: field_width(field_rs1);
+        u32 rs2: field_width(field_rs2);
+        u32 imm11dt5: field_width(field_imm11dt5);
+
+        inline i32 my_temp_imm() const {
+            return (
+                sign_extend(
+                    i32((u32(imm11dt5) << 5u) | u32(imm4dt0)),
+                    12u
+                )
+            );
+        }
+
+        //def myTempImm(
+        //): SInt = (
+        //    Cat(
+        //        imm11dt5,
+        //        imm4dt0,
+        //    ).asSInt.resize(Riscv32Op.mainWidth)
+        //)
+    };
+
+    class OpFields final {
+    public:     // variables
+        u32 op;
+        u32 f3;
+    };
+
+    class Op final {
+    public:     // constants
+        static constexpr OpFields
+            SbRs2Rs1Imm = {.op=0x23, .f3=0x0},
+            ShRs2Rs1Imm = {.op=0x23, .f3=0x1},
+            SwRs2Rs1Imm = {.op=0x23, .f3=0x2};
+    };
+};
+
+class Rv32BType final {
+public:     // variables
+    static constexpr Field field_opcode = {6, 0};
+    static constexpr Field field_imm11dt11 = {7, 7};
+    static constexpr Field field_imm4dt1 = {11, 8};
+    static constexpr Field field_funct3 = {14, 12};
+    static constexpr Field field_rs1 = {19, 15};
+    static constexpr Field field_rs2 = {24, 20};
+    static constexpr Field field_imm10dt5 = {30, 25};
+    static constexpr Field field_imm12dt12 = {31, 31};
+
+    class EncInstr final {
+    public:     // varaibles
+        u32 opcode: field_width(field_opcode);
+        u32 imm11dt11: field_width(field_imm11dt11);
+        u32 imm4dt1: field_width(field_imm4dt1);
+        u32 funct3: field_width(field_funct3);
+        u32 rs1: field_width(field_rs1);
+        u32 rs2: field_width(field_rs2);
+        u32 imm10dt5: field_width(field_imm10dt5);
+        u32 imm12dt12: field_width(field_imm12dt12);
+
+        inline i32 my_temp_imm() const {
+            const u32 temp = (
+                (u32(imm12dt12) << 12u)
+                | (u32(imm11dt11) << 11u)
+                | (u32(imm10dt5) << 5u)
+                | (u32(imm4dt1) << 1u)
+            );
+            return sign_extend(temp, 13u);
+        }
+
+        //def myTempImm(
+        //): SInt = (
+        //    Cat(
+        //        imm12dt12,
+        //        imm11dt11,
+        //        imm10dt5,
+        //        imm4dt1,
+        //        U"1'd0",
+        //    ).asSInt.resize(Riscv32Op.mainWidth)
+        //)
+    };
+
+    class OpFields final {
+    public:     // variables
+        u32 op;
+        u32 f3;
+    };
+
+    class Op final {
+    public:     // variables
+        static constexpr OpFields
+            BeqRs1Rs2Imm = {.op=0x63, .f3=0x0},
+            BneRs1Rs2Imm = {.op=0x63, .f3=0x1},
+            BltRs1Rs2Imm = {.op=0x63, .f3=0x4},
+            BgeRs1Rs2Imm = {.op=0x63, .f3=0x5},
+            BltuRs1Rs2Imm = {.op=0x63, .f3=0x6},
+            BgeuRs1Rs2Imm = {.op=0x63, .f3=0x7};
+    };
+};
+
+class Rv32JType final {
+public:     // variables
+    static constexpr Field field_opcode = {6, 0};
+    static constexpr Field field_rd = {11, 7};
+    static constexpr Field field_imm19dt12 = {19, 12};
+    static constexpr Field field_imm11dt11 = {20, 20};
+    static constexpr Field field_imm10dt1 = {30, 21};
+    static constexpr Field field_imm20dt20 = {31, 31};
+
+    class EncInstr final {
+    public:     // variables
+        u32 opcode: field_width(field_opcode);
+        u32 rd: field_width(field_rd);
+        u32 imm19dt12: field_width(field_imm19dt12);
+        u32 imm11dt11: field_width(field_imm11dt11);
+        u32 imm10dt1: field_width(field_imm10dt1);
+        u32 imm20dt20: field_width(field_imm20dt20);
+
+        inline i32 my_temp_imm() const {
+            const u32 temp = (
+                (u32(imm20dt20) << 20u)
+                | (u32(imm19dt12) << 12u)
+                | (u32(imm11dt11) << 11u)
+                | (u32(imm10dt1) << 1u)
+            );
+            const i32 ret = i32(sign_extend(temp, 21u));
+            //u32 iword = 0;
+            //std::memcpy(&iword, this, sizeof(iword));
+
+            //std::printf(
+            //    "Rv32JType::EncInstr::my_temp_imm(): "
+            //    "%x %x; %x\n",
+            //    u32(temp),
+            //    u32(ret),
+            //    u32(iword)
+            //);
+            return ret;
+        }
+
+        //def myTempImm(
+        //): SInt = (
+        //    Cat(
+        //        imm20dt20,
+        //        imm19dt12,
+        //        imm11dt11,
+        //        imm10dt1,
+        //        U"1'd0",
+        //    ).asSInt.resize(Riscv32Op.mainWidth)
+        //)
+    };
+
+    class OpFields final {
+    public:     // variables
+        u32 op;
+    };
+
+    class Op final {
+    public: // variables
+        // rd = PC+4; PC += imm
+        static constexpr OpFields
+            JalRdImm = {.op=0x6f};
+    };
+};
+
+class Rv32UType final {
+public:     // variables
+    static constexpr Field field_opcode = {6, 0};
+    static constexpr Field field_rd = {11, 7};
+    static constexpr Field field_imm = {31, 12};
+
+    class EncInstr final {
+    public:     // variables
+        u32 opcode: field_width(field_opcode);
+        u32 rd: field_width(field_rd);
+        u32 imm: field_width(field_imm);
+
+        inline i32 my_temp_imm() const {
+            const u32 temp = (
+                u32(imm) << 12u
+            );
+            //return sign_extend(temp, 32u);
+            return temp;
+        }
+
+        //def myTempImm(
+        //): SInt = (
+        //    Cat(
+        //        imm,
+        //        U"12'd0",
+        //    ).asSInt.resize(Riscv32Op.mainWidth)
+        //)
+    };
+
+    class OpFields final {
+    public:     // variables
+        u32 op;
+    };
+
+    class Op final {
+    public:     // variables
+        static constexpr OpFields
+            LuiRdImm31Downto12 = {.op=0x37},
+            AuipcRdImm31Downto12 = {.op=0x17};
+    };
+};
+
+
+std::string my_rv32im_disasm(
+    
+) {
+    //_sw_wrote_to_fb_end = std::nullopt;
+    //_sw_read_from_tp = false;
+    //_tp = &n_tp;
+    const u32 saved_pc = _pc;
+    if (
+        saved_pc != (saved_pc & ~0b11u)
+    ) {
+        std::fprintf(
+            stderr,
+            "Eek! mis-aligned pc:%x\n",
+            saved_pc
+        );
+        std::exit(1);
+    }
+    _pc += sizeof(u32);
+
+    std::memcpy(
+        &_enc_instr_r, _mem.get() + saved_pc, sizeof(_enc_instr_r)
+    );
+    static constexpr u32 ENC_INSTR_EBREAK = 0x00100073u;
+    static constexpr u32 ENC_INSTR_ECALL = 0x00000073u;
+    u32 my_maybe_bad_enc_instr = 0;
+    std::memcpy(&my_maybe_bad_enc_instr, &_enc_instr_r, sizeof(u32));
+    if (
+        my_maybe_bad_enc_instr == ENC_INSTR_EBREAK
+        || my_maybe_bad_enc_instr == ENC_INSTR_ECALL
+    ) {
+        std::fprintf(
+            stderr,
+            "Error: at saved_pc:%x, found ebreak:%i or ecall:%i!\n",
+            saved_pc,
+            int(my_maybe_bad_enc_instr == ENC_INSTR_EBREAK),
+            int(my_maybe_bad_enc_instr == ENC_INSTR_ECALL)
+        );
+        std::exit(1);
+    }
+
+    const u32 inp_rd = _rd();
+    const u32 inp_rs1 = _rs1();
+    const u32 inp_rs2 = _rs2();
+    Rv32RType::EncInstr temp_enc_instr_r;
+    std::memcpy(&temp_enc_instr_r, &_enc_instr_r, sizeof(_enc_instr_r));
+    const std::string prev_to_dbg_print = _to_dbg_print;
+
+    #ifdef DEBUG
+    std::string disasm_str;
+    #endif
+    auto dbg_print = [&](
+        bool force_print=false,
+        bool final_start_cond=false
+    ) -> void {
+        if (!_do_extra_print_start_pc && !force_print) {
+            return;
+        }
+        if (saved_pc == _do_extra_print_start_pc) {
+            _seen_do_extra_print_start_pc = true;
+        }
+        if (final_start_cond) {
+            _seen_final_start_print_cond = true;
+        }
+        if (!_seen_do_extra_print_start_pc && !force_print) {
+            return;
+        }
+        if (!_seen_final_start_print_cond && !force_print) {
+            return;
+        }
+
+        u32 temp_iword = 0u;
+        std::memcpy(&temp_iword, &temp_enc_instr_r, sizeof(u32));
+
+        std::printf(
+            "saved_pc=%x    ", unsigned(saved_pc)
+        );
+        std::printf(
+            "pc=%x    ", unsigned(_pc)
+        );
+        #ifdef DEBUG
+        std::printf(
+            "disasm:(%s)    ", disasm_str.c_str()
+        );
+        #endif
+        std::printf(
+            "inp_gprs:(%s:%x %s:%x %s:%x)    ",
+            GPR_NAMES[temp_enc_instr_r.rd], inp_rd,
+            GPR_NAMES[temp_enc_instr_r.rs1], inp_rs1,
+            GPR_NAMES[temp_enc_instr_r.rs2], inp_rs2
+        );
+        for (size_t i=0u; i<_gpr_file.size(); ++i) {
+            std::printf(
+                "%s=%x",
+                GPR_NAMES[i],
+                unsigned(_gpr_file.at(i))
+            );
+            if (i + 1u < _gpr_file.size()) {
+                std::printf(" ");
+            }
+        }
+        printf("\n");
+    };
+    auto bad_instr = [&]() -> void {
+        u32 temp_iword = 0u;
+        std::memcpy(&temp_iword, &temp_enc_instr_r, sizeof(u32));
+
+        dbg_print(true);
+
+        std::fprintf(
+            stderr,
+            "Error: Unimplemented instruction: saved_pc=%x iword=%x\n",
+            saved_pc,
+            temp_iword
+        );
+        std::exit(1);
+    };
+
+    switch (temp_enc_instr_r.opcode) {
+    case Rv32RType::Op::AddRdRs1Rs2.op: {
+        std::string instr_name;
+        switch (temp_enc_instr_r.funct7) {
+        case Rv32RType::Op::AddRdRs1Rs2.f7: {
+            switch (temp_enc_instr_r.funct3) {
+            case Rv32RType::Op::AddRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x0, .f7=0x00},
+                _write_gpr_rd(
+                    inp_rs1 + inp_rs2
+                );
+                instr_name = "add";
+            }
+                break;
+            case Rv32RType::Op::XorRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x4, .f7=0x00},
+                _write_gpr_rd(
+                    inp_rs1 ^ inp_rs2
+                );
+                instr_name = "xor";
+            }
+                break;
+            case Rv32RType::Op::OrRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x6, .f7=0x00},
+                _write_gpr_rd(
+                    inp_rs1 | inp_rs2
+                );
+                instr_name = "or";
+            }
+                break;
+            case Rv32RType::Op::AndRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x7, .f7=0x00},
+                _write_gpr_rd(
+                    inp_rs1 & inp_rs2
+                );
+                instr_name = "and";
+            }
+                break;
+            case Rv32RType::Op::SllRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x1, .f7=0x0},
+                //if (inp_rs2 >= 32u) {
+                //    std::fprintf(
+                //        stderr,
+                //        "Error: "
+                //        "Unknown behavior of bit shift (rs2:%u): %x\n",
+                //        inp_rs2,
+                //        saved_pc
+                //    );
+                //    dbg_print(true);
+                //    std::exit(1);
+                //    //_write_gpr_rd(0x0u);
+                //} else {
+                    _write_gpr_rd(
+                        inp_rs1 << u32(inp_rs2 & 0x1fu)
+                    );
+                //}
+                instr_name = "sll";
+            }
+                break;
+            case Rv32RType::Op::SrlRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x5, .f7=0x00},
+                //if (inp_rs2 >= 32u) {
+                //    std::fprintf(
+                //        stderr,
+                //        "Error: "
+                //        "Unknown behavior of bit shift (rs2:%u): %x\n",
+                //        inp_rs2,
+                //        saved_pc
+                //    );
+                //    dbg_print(true);
+                //    std::exit(1);
+                //    //_write_gpr_rd(0x0u);
+                //} else {
+                    _write_gpr_rd(
+                        inp_rs1 >> u32(inp_rs2 & 0x1fu)
+                    );
+                //}
+                instr_name = "srl";
+            }
+                break;
+            case Rv32RType::Op::SltRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x2, .f7=0x00},
+                if (i32(inp_rs1) < i32(inp_rs2)) {
+                    _write_gpr_rd(0x1u);
+                } else {
+                    _write_gpr_rd(0x0u);
+                }
+                instr_name = "slt";
+            }
+                break;
+            case Rv32RType::Op::SltuRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x3, .f7=0x00},
+                if (inp_rs1 < inp_rs2) {
+                    _write_gpr_rd(0x1u);
+                } else {
+                    _write_gpr_rd(0x0u);
+                }
+                instr_name = "sltu";
+            }
+                break;
+            default: {
+                bad_instr();
+            }
+                break;
+            }
+        }
+            break;
+        case Rv32RType::Op::SubRdRs1Rs2.f7: {
+            switch (temp_enc_instr_r.funct3) {
+            case Rv32RType::Op::SubRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x0, .f7=0x20},
+                _write_gpr_rd(
+                    inp_rs1 - inp_rs2
+                );
+                instr_name = "sub";
+            }
+                break;
+            case Rv32RType::Op::SraRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x5, .f7=0x20},
+                //if (inp_rs2 >= 32u) {
+                //    std::fprintf(
+                //        stderr,
+                //        "Error: "
+                //        "Unknown behavior of bit shift (rs2:%u): %x\n",
+                //        inp_rs2,
+                //        saved_pc
+                //    );
+                //    dbg_print(true);
+                //    std::exit(1);
+                //    //if ((inp_rs1 >> 31u) & 0b1) {
+                //    //    _write_gpr_rd(u32(i32(-1)));
+                //    //} else {
+                //    //    _write_gpr_rd(0x0u);
+                //    //}
+                //} else {
+                    _write_gpr_rd(
+                        i32(inp_rs1) >> u32(inp_rs2 & 0x1fu)
+                    );
+                //}
+                instr_name = "sra";
+            }
+                break;
+            default: {
+                bad_instr();
+            }
+                break;
+            }
+        }
+            break;
+        //------
+        case Rv32RType::Op::MulRdRs1Rs2.f7: {
+            switch (temp_enc_instr_r.funct3) {
+            case Rv32RType::Op::MulRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x0, .f7=0x01},
+                _write_gpr_rd(
+                    inp_rs1 * inp_rs2
+                );
+                instr_name = "mul";
+            }
+                break;
+            case Rv32RType::Op::MulhRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x1, .f7=0x01},
+                const i64 temp_rs1 = i64(sign_extend(inp_rs1, 32u));
+                const i64 temp_rs2 = i64(sign_extend(inp_rs2, 32u));
+                _write_gpr_rd(
+                    u32(i64(temp_rs1 * temp_rs2) >> 32u)
+                );
+                instr_name = "mulh";
+            }
+                break;
+            case Rv32RType::Op::MulhsuRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x2, .f7=0x01},
+                const i64 temp_rs1 = i64(sign_extend(inp_rs1, 32u));
+                const u64 temp_rs2 = zero_extend(inp_rs2, 32u);
+                _write_gpr_rd(
+                    u32(u64(temp_rs1 * temp_rs2) >> 32u)
+                );
+                instr_name = "mulhsu";
+            }
+                break;
+            case Rv32RType::Op::MulhuRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x3, .f7=0x01},
+                const u64 temp_rs1 = zero_extend(inp_rs1, 32u);
+                const u64 temp_rs2 = zero_extend(inp_rs2, 32u);
+                _write_gpr_rd(
+                    u32(u64(temp_rs1 * temp_rs2) >> 32u)
+                );
+                instr_name = "mulhu";
+            }
+                break;
+            case Rv32RType::Op::DivRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x4, .f7=0x01},
+                if (inp_rs2 != 0) {
+                    _write_gpr_rd(
+                        u32(i32(i32(inp_rs1) / i32(inp_rs2)))
+                    );
+                } else {
+                    _write_gpr_rd(u32(i32(-1)));
+                }
+                instr_name = "div";
+            }
+                break;
+            case Rv32RType::Op::DivuRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x5, .f7=0x01},
+                if (inp_rs2 != 0) {
+                    _write_gpr_rd(
+                        inp_rs1 / inp_rs2
+                    );
+                } else {
+                    _write_gpr_rd(u32(i32(-1)));
+                }
+                instr_name = "divu";
+            }
+                break;
+            case Rv32RType::Op::RemRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x6, .f7=0x01},
+                if (inp_rs2 != 0) {
+                    _write_gpr_rd(
+                        i32(i32(inp_rs1) % i32(inp_rs2))
+                    );
+                } else {
+                    _write_gpr_rd(
+                        inp_rs1
+                    );
+                }
+                instr_name = "rem";
+            }
+                break;
+            case Rv32RType::Op::RemuRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x7, .f7=0x01};
+                if (inp_rs2 != 0) {
+                    _write_gpr_rd(
+                        u32(inp_rs1 % inp_rs2)
+                    );
+                } else {
+                    _write_gpr_rd(
+                        inp_rs1
+                    );
+                }
+                instr_name = "remu";
+            }
+                break;
+            default: {
+                bad_instr();
+            }
+                break;
+            }
+        }
+            break;
+        default: {
+            bad_instr();
+        }
+            break;
+        }
+        #ifdef DEBUG
+        disasm_str = sconcat(
+            std::move(instr_name), " ",
+            GPR_NAMES[temp_enc_instr_r.rd], ", ",
+            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+            GPR_NAMES[temp_enc_instr_r.rs2]
+        );
+        #endif
+    }
+        break;
+    case Rv32IType::Op::AddiRdRs1Imm.op: {
+        std::memcpy(&_enc_instr_i, &temp_enc_instr_r, sizeof(u32));
+        std::string instr_name;
+        switch (_enc_instr_i.funct3) {
+        case Rv32IType::Op::AddiRdRs1Imm.f3: {
+            // = {.op=0x13, .f3=0x0, .imm11dt5=-1},
+            _write_gpr_rd(
+                u32(inp_rs1) + _enc_instr_i.my_temp_imm()
+            );
+            instr_name = "addi";
+        }
+            break;
+        case Rv32IType::Op::XoriRdRs1Imm.f3: {
+            // = {.op=0x13, .f3=0x4, .imm11dt5=-1},
+            _write_gpr_rd(
+                u32(inp_rs1) ^ u32(_enc_instr_i.my_temp_imm())
+            );
+            instr_name = "xori";
+        }
+            break;
+        case Rv32IType::Op::OriRdRs1Imm.f3: {
+            // = {.op=0x13, .f3=0x6, .imm11dt5=-1},
+            _write_gpr_rd(
+                u32(inp_rs1) | u32(_enc_instr_i.my_temp_imm())
+            );
+            instr_name = "ori";
+        }
+            break;
+        case Rv32IType::Op::AndiRdRs1Imm.f3: {
+            // = {.op=0x13, .f3=0x7, .imm11dt5=-1},
+            _write_gpr_rd(
+                u32(inp_rs1) & u32(_enc_instr_i.my_temp_imm())
+            );
+            instr_name = "andi";
+        }
+            break;
+
+        // rd = rs1 << imm[0:4]
+        case Rv32IType::Op::SlliRdRs1Imm.f3: {
+            // = {.op=0x13, .f3=0x1, .imm11dt5=0x00},
+            _write_gpr_rd(
+                inp_rs1
+                << (u32(_enc_instr_i.my_imm4dt0()) & 0x1fu)
+            );
+            instr_name = "slli";
+        }
+            break;
+
+        // rd = rs1 >> imm[0:4]
+        case Rv32IType::Op::SrliRdRs1Imm.f3: {
+            switch (_enc_instr_i.my_imm11dt5()) {
+            // rd = rs1 >> imm[0:4]
+            case Rv32IType::Op::SrliRdRs1Imm.imm11dt5: {
+                // = {.op=0x13, .f3=0x5, .imm11dt5=0x00},
+                _write_gpr_rd(
+                    inp_rs1
+                    >> (u32(_enc_instr_i.my_imm4dt0()) & 0x1fu)
+                );
+                instr_name = "srli";
+            }
+                break;
+
+            // rd = rs1 >> imm[0:4] msb-extends
+            case Rv32IType::Op::SraiRdRs1Imm.imm11dt5: {
+                // = {.op=0x13, .f3=0x5, .imm11dt5=0x20},
+                //std::printf(
+                //    "NOTE: srai %s, %s, %x\n",
+                //    GPR_NAMES[temp_enc_instr_r.rd],
+                //    GPR_NAMES[temp_enc_instr_r.rs1],
+                //    _enc_instr_i.my_imm4dt0()
+                //);
+                _write_gpr_rd(
+                    i32(inp_rs1)
+                    >> (u32(_enc_instr_i.my_imm4dt0()) & 0x1fu)
+                );
+                instr_name = "srai";
+            }
+                break;
+            default: {
+                bad_instr();
+            }
+                break;
+            }
+        }
+            break;
+
+        case Rv32IType::Op::SltiRdRs1Imm.f3: {
+            // = {.op=0x13, .f3=0x2, .imm11dt5=-1},
+            if (i32(inp_rs1) < i32(_enc_instr_i.my_temp_imm())) {
+                _write_gpr_rd(0x1u);
+            } else {
+                _write_gpr_rd(0x0u);
+            }
+            instr_name = "slti";
+        }
+            break;
+        case Rv32IType::Op::SltiuRdRs1Imm.f3: {
+            // = {.op=0x13, .f3=0x3, .imm11dt5=-1},
+            if (inp_rs1 < u32(i32(_enc_instr_i.my_temp_imm()))) {
+                _write_gpr_rd(0x1u);
+            } else {
+                _write_gpr_rd(0x0u);
+            }
+            instr_name = "sltiu";
+        }
+            break;
+        default: {
+            bad_instr();
+        }
+            break;
+        }
+        #ifdef DEBUG
+        disasm_str = sconcat(
+            std::move(instr_name), " ",
+            GPR_NAMES[temp_enc_instr_r.rd], ", ",
+            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+            std::hex, "0x", _enc_instr_i.my_temp_imm(), std::dec
+        );
+        #endif
+    }
+        break;
+
+    case Rv32IType::Op::LbRdRs1Imm.op: {
+        std::memcpy(&_enc_instr_i, &temp_enc_instr_r, sizeof(u32));
+        std::string instr_name;
+        switch (_enc_instr_i.funct3) {
+        //--------
+        case Rv32IType::Op::LbRdRs1Imm.f3: {
+            // = {.op=0x03, .f3=0x0, .imm11dt5=-1},
+            _write_gpr_rd(
+                _bus_read_i8(inp_rs1 + _enc_instr_i.my_temp_imm())
+            );
+            instr_name = "lb";
+        }
+            break;
+        case Rv32IType::Op::LhRdRs1Imm.f3: {
+            // = {.op=0x03, .f3=0x1, .imm11dt5=-1},
+            _write_gpr_rd(
+                _bus_read_i16(inp_rs1 + _enc_instr_i.my_temp_imm())
+            );
+            instr_name = "lh";
+        }
+            break;
+        case Rv32IType::Op::LwRdRs1Imm.f3: {
+            // = {.op=0x03, .f3=0x2, .imm11dt5=-1},
+            _write_gpr_rd(
+                _bus_read_u32(inp_rs1 + _enc_instr_i.my_temp_imm())
+            );
+            instr_name = "lw";
+        }
+            break;
+        case Rv32IType::Op::LbuRdRs1Imm.f3: {
+            // = {.op=0x03, .f3=0x4, .imm11dt5=-1},
+            _write_gpr_rd(
+                _bus_read_u8(inp_rs1 + _enc_instr_i.my_temp_imm())
+            );
+            instr_name = "lbu";
+        }
+            break;
+        case Rv32IType::Op::LhuRdRs1Imm.f3: {
+            // = {.op=0x03, .f3=0x5, .imm11dt5=-1},
+            _write_gpr_rd(
+                _bus_read_u16(inp_rs1 + _enc_instr_i.my_temp_imm())
+            );
+            instr_name = "lhu";
+        }
+            break;
+        default: {
+            bad_instr();
+        }
+            break;
+        }
+        #ifdef DEBUG
+        disasm_str = sconcat(
+            std::move(instr_name), " ",
+            GPR_NAMES[temp_enc_instr_r.rd], ", ",
+            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+            std::hex, "0x", _enc_instr_i.my_temp_imm(), std::dec
+        );
+        #endif
+    }
+        break;
+    //--------
+    case Rv32IType::Op::JalrRdRs1Imm.op: {
+        // = {.op=0x67, .f3=0x0, .imm11dt5=-1};
+        // rd = PC+4; PC = rs1 + imm
+        std::memcpy(&_enc_instr_i, &temp_enc_instr_r, sizeof(u32));
+        _pc = inp_rs1 + _enc_instr_i.my_temp_imm();
+        _write_gpr_rd(
+            saved_pc + sizeof(u32)
+        );
+        #ifdef DEBUG
+        disasm_str = sconcat(
+            "jalr ",
+            GPR_NAMES[temp_enc_instr_r.rd], ", ",
+            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+            std::hex, "0x", _enc_instr_i.my_temp_imm(), std::dec
+        );
+        #endif
+    }
+        break;
+
+    case Rv32SType::Op::SbRs2Rs1Imm.op: {
+        std::memcpy(&_enc_instr_s, &temp_enc_instr_r, sizeof(u32));
+        std::string instr_name;
+        switch (_enc_instr_s.funct3) {
+        case Rv32SType::Op::SbRs2Rs1Imm.f3: {
+            // = {.op=0x23, .f3=0x0},
+            _bus_write_u8(
+                inp_rs2, inp_rs1 + _enc_instr_s.my_temp_imm()
+            );
+            instr_name = "sb";
+        }
+            break;
+        case Rv32SType::Op::ShRs2Rs1Imm.f3: {
+            // = {.op=0x23, .f3=0x1},
+            _bus_write_u16(
+                inp_rs2, inp_rs1 + _enc_instr_s.my_temp_imm()
+            );
+            instr_name = "sh";
+        }
+            break;
+        case Rv32SType::Op::SwRs2Rs1Imm.f3: {
+            // = {.op=0x23, .f3=0x2};
+            //std::printf(
+            //    
+            //);
+            _bus_write_u32(
+                inp_rs2, inp_rs1 + _enc_instr_s.my_temp_imm()
+            );
+            instr_name = "sw";
+        }
+            break;
+        default: {
+            bad_instr();
+        }
+            break;
+        }
+        #ifdef DEBUG
+        disasm_str = sconcat(
+            std::move(instr_name), " ",
+            GPR_NAMES[temp_enc_instr_r.rs2], ", ",
+            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+            std::hex, "0x", _enc_instr_s.my_temp_imm(), std::dec
+        );
+        #endif
+    }
+        break;
+    case Rv32BType::Op::BeqRs1Rs2Imm.op: {
+        std::memcpy(&_enc_instr_b, &temp_enc_instr_r, sizeof(u32));
+        std::string instr_name;
+        switch (_enc_instr_b.funct3) {
+        case Rv32BType::Op::BeqRs1Rs2Imm.f3: {
+            // = {.op=0x63, .f3=0x0},
+            if (inp_rs1 == inp_rs2) {
+                _pc = saved_pc + _enc_instr_b.my_temp_imm();
+                //_pc = _pc + _enc_instr_b.my_temp_imm();
+            }
+            instr_name = "beq";
+        }
+            break;
+        case Rv32BType::Op::BneRs1Rs2Imm.f3: {
+            // = {.op=0x63, .f3=0x1},
+            if (inp_rs1 != inp_rs2) {
+                _pc = saved_pc + _enc_instr_b.my_temp_imm();
+                //_pc = _pc + _enc_instr_b.my_temp_imm();
+            }
+            instr_name = "bne";
+        }
+            break;
+        case Rv32BType::Op::BltRs1Rs2Imm.f3: {
+            // = {.op=0x63, .f3=0x4},
+            if (i32(inp_rs1) < i32(inp_rs2)) {
+                _pc = saved_pc + _enc_instr_b.my_temp_imm();
+                //_pc = _pc + _enc_instr_b.my_temp_imm();
+            }
+            instr_name = "blt";
+        }
+            break;
+        case Rv32BType::Op::BgeRs1Rs2Imm.f3: {
+            // = {.op=0x63, .f3=0x5},
+            if (i32(inp_rs1) >= i32(inp_rs2)) {
+                _pc = saved_pc + _enc_instr_b.my_temp_imm();
+                //_pc = _pc + _enc_instr_b.my_temp_imm();
+            }
+            instr_name = "bge";
+        }
+            break;
+        case Rv32BType::Op::BltuRs1Rs2Imm.f3: {
+            // = {.op=0x63, .f3=0x6},
+            if (inp_rs1 < inp_rs2) {
+                _pc = saved_pc + _enc_instr_b.my_temp_imm();
+                //_pc = _pc + _enc_instr_b.my_temp_imm();
+            }
+            instr_name = "bltu";
+        }
+            break;
+        case Rv32BType::Op::BgeuRs1Rs2Imm.f3: {
+            // = {.op=0x63, .f3=0x7};
+            if (inp_rs1 >= inp_rs2) {
+                _pc = saved_pc + _enc_instr_b.my_temp_imm();
+                //_pc = _pc + _enc_instr_b.my_temp_imm();
+            }
+            instr_name = "bgeu";
+        }
+            break;
+        default: {
+            bad_instr();
+        }
+            break;
+        }
+        #ifdef DEBUG
+        disasm_str = sconcat(
+            std::move(instr_name), " ",
+            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+            GPR_NAMES[temp_enc_instr_r.rs2], ", ",
+            std::hex, "0x",
+                (saved_pc + _enc_instr_b.my_temp_imm()),
+            std::dec
+        );
+        #endif
+    }
+        break;
+
+    case Rv32JType::Op::JalRdImm.op: {
+        // = {.op=0x6f};
+        // rd = PC+4; PC += imm
+        std::memcpy(&_enc_instr_j, &temp_enc_instr_r, sizeof(u32));
+        #ifdef DEBUG
+        disasm_str = sconcat(
+            "jal ",
+            GPR_NAMES[temp_enc_instr_r.rd], ", ",
+            std::hex, "0x",
+                (saved_pc + _enc_instr_j.my_temp_imm()),
+            std::dec
+        );
+        #endif
+        _pc = saved_pc + _enc_instr_j.my_temp_imm();
+        //_pc = _pc + _enc_instr_j.my_temp_imm();
+        _write_gpr_rd(
+            saved_pc + sizeof(u32)
+        );
+    }
+        break;
+    case Rv32UType::Op::LuiRdImm31Downto12.op: {
+        // = {.op=0x37},
+        std::memcpy(&_enc_instr_u, &temp_enc_instr_r, sizeof(u32));
+        #ifdef DEBUG
+        disasm_str = sconcat(
+            "lui ",
+            GPR_NAMES[temp_enc_instr_r.rd], ", ",
+            std::hex, "0x", _enc_instr_u.my_temp_imm(), std::dec
+        );
+        #endif
+        _write_gpr_rd(
+            _enc_instr_u.my_temp_imm()
+        );
+    }
+        break;
+    case Rv32UType::Op::AuipcRdImm31Downto12.op: {
+        // = {.op=0x17};
+        std::memcpy(&_enc_instr_u, &temp_enc_instr_r, sizeof(u32));
+        #ifdef DEBUG
+        disasm_str = sconcat(
+            "auipc ",
+            GPR_NAMES[temp_enc_instr_r.rd], ", ",
+            std::hex, "0x", _enc_instr_u.my_temp_imm(), std::dec
+        );
+        #endif
+        _write_gpr_rd(
+            saved_pc + _enc_instr_u.my_temp_imm()
+            //_pc + _enc_instr_u.my_temp_imm()
+        );
+    }
+        break;
+
+    default: {
+        bad_instr();
+    }
+        break;
+    }
+    const bool my_final_start_print_cond = (
+        prev_to_dbg_print != _to_dbg_print
+        && _to_dbg_print == "reading lump:4eb"
+        //false
+    );
+    dbg_print(false, my_final_start_print_cond);
+
+    //_pc += sizeof(u32);
+
+    return std::pair(_sw_read_from_tp, _sw_wrote_to_fb_end);
+}
+
+#endif      // RV32_DIS_HPP

@@ -1,10 +1,116 @@
 `default_nettype none
-module melted_moon
-(
-	input         clk,
+
+module melted_moon_clk_domain_reset(
+  //--------
+  input     clk_50m,
+  input     pll_locked,
+  //--------
+  input     clk_main,
+  output    reset_main
+  //--------
+);
+
+reg my_locked_reg_del1;
+reg my_locked_reg;
+reg my_locked_reg1;
+reg my_locked_reg2;
+
+reg reset_temp_reg_del1;
+reg reset_temp_reg;
+reg reset_temp_reg1;
+reg reset_temp_reg2;
+
+reg reset_main_reg;
+reg reset_main_reg1;
+reg reset_main_reg2;
+
+localparam PLL_LOCKED_CNT_WIDTH = 5;
+reg [PLL_LOCKED_CNT_WIDTH - 1:0] pll_locked_cnt; //= 'd0;
+wire pll_locked_cnt_done = pll_locked_cnt[PLL_LOCKED_CNT_WIDTH - 1];
+
+always @(posedge clk_50m) begin
+  my_locked_reg2 <= pll_locked;
+  my_locked_reg1 <= my_locked_reg2;
+  my_locked_reg <= my_locked_reg1;
+  my_locked_reg_del1 <= my_locked_reg;
+end
+
+always @(posedge clk_50m) begin
+  if (my_locked_reg && !my_locked_reg_del1) begin
+    pll_locked_cnt <= 'd0;
+  end else if (!pll_locked_cnt_done) begin
+    pll_locked_cnt <= pll_locked_cnt + 'd1;
+  end
+end
+
+//wire my_cpu_clk = clk_sys; //clk_50m; //clk_sys;
+
+reg my_reset_reg_del1;
+reg my_reset_reg;
+reg my_reset_reg1;
+reg my_reset_reg2;
+reg my_reset_done;
+
+always @(posedge clk_main) begin
+  my_reset_reg2 <= pll_locked_cnt_done;
+  my_reset_reg1 <= my_reset_reg2;
+  my_reset_reg <= my_reset_reg1;
+  my_reset_reg_del1 <= my_reset_reg;
+  if (my_reset_reg && !my_reset_reg_del1) begin
+    my_reset_done <= 1'b1;
+  end else begin
+    my_reset_done <= 1'b0;
+  end
+end
+
+//always @(posedge clk_main) begin
+//  if (my_reset_done[1] && my_reset_done[2]) begin
+//  end
+//end
+
+always @(posedge clk_main) begin
+  //if (pll_locked_cnt_done) begin
+  //reset_temp_reg2 <= 1'b0;//pll_locked_cnt_done; //my_locked_reg;
+  //end
+  reset_temp_reg2 <= my_reset_done;// && my_reset_done[1];
+  reset_temp_reg1 <= reset_temp_reg2;
+  reset_temp_reg <= reset_temp_reg1;
+  reset_temp_reg_del1 <= reset_temp_reg;
+end
+always @ (posedge clk_main) begin
+  //reset_main_reg2 <= reset_temp_reg;//reset;//reset_temp_reg;
+  if (reset_temp_reg && !reset_temp_reg_del1) begin
+    reset_main_reg2 <= 1'b1;
+    reset_main_reg1 <= 1'b1;
+    reset_main_reg <= 1'b1;
+  end else begin
+    reset_main_reg2 <= 1'b0;
+    reset_main_reg1 <= reset_main_reg2;
+    reset_main_reg <= reset_main_reg1;
+  end
+
+  //reset_main_reg1 <= reset;
+  //reset_main_reg <= reset;//reset_main_reg1; //reset;
+end
+
+assign reset_main = reset_main_reg;
+
+endmodule
+
+module melted_moon(
+  input         clk_50m,
+	input         clk_sys,
+	//input         clk_vga,
 	//input         vgaClk_clk,
 	//input         clk_cpu,
 	input         reset,
+
+	input        [31:0] joystick_0,
+	input        [31:0] joystick_1,
+	input        [31:0] joystick_2,
+	input        [31:0] joystick_3,
+	input        [31:0] joystick_4,
+	input        [31:0] joystick_5,
 	
 	input         pal,
 	input         scandouble,
@@ -49,6 +155,17 @@ module melted_moon
 	input [31:0]  ioctl_file_ext,
 	output        ioctl_wait,
 
+  output wire          ddram_clk,
+  input  wire          ddram_busy,
+  output wire [7:0]    ddram_burstCnt,
+  output wire [28:0]   ddram_addr,
+  input  wire [63:0]   ddram_dout,
+  input  wire          ddram_doutReady,
+  output wire          ddram_rd,
+  output wire [63:0]   ddram_din,
+  output wire [7:0]    ddram_be,
+  output wire          ddram_we,
+
 	output        sdram_CLK,
 	output        sdram_CKE,
 	output [12:0] sdram_A,
@@ -62,130 +179,24 @@ module melted_moon
 	output        sdram_nWE
 );
 
-//reg   [9:0] hc;
-//reg   [9:0] vc;
-//reg   [9:0] vvc;
-//reg  [63:0] rnd_reg, rnd_reg1;
-//
-//wire  [5:0] rnd_c = {rnd_reg[0],rnd_reg[1],rnd_reg[2],rnd_reg[2],rnd_reg[2],rnd_reg[2]};
-//wire [63:0] rnd;
 
-//wire cpu_io_idsIraIrq_ready;
-//wire [31:0] cpu_io_regFileWriteData;
-//reg [0:0] cpu_io_regFileWriteData_sys_reg;
-//reg [0:0] cpu_io_regFileWriteData_sys_reg1;
-//reg [0:0] cpu_io_regFileWriteData_sys_reg2;
-//
-//reg [0:0] cpu_io_regFileWriteData_cpu_reg;
-//reg [0:0] cpu_io_regFileWriteData_cpu_reg1;
-//reg [0:0] cpu_io_regFileWriteData_cpu_reg2;
 
-//reg [1:0] buttons_reg = 0;
+wire reset_cpu;
+//wire reset_vga;
 
-//reg pal_sys_reg; //= 1'b0;
-//reg pal_sys_reg1; //= 1'b0;
-//reg pal_sys_reg2; //= 1'b0
-//
-//reg pal_cpu_reg; //= 1'b0;
-//reg pal_cpu_reg1; //= 1'b0;
-//reg pal_cpu_reg2; //= 1'b0
+melted_moon_clk_domain_reset cpu_clk_domain_reset(
+  .clk_50m(clk_50m),
+  .pll_locked(pll_locked),
+  .clk_main(clk_sys),
+  .reset_main(reset_cpu)
+);
 
-//localparam SOFT_RESET_CNT_WIDTH = 17;
-//localparam SOFT_RESET_CNT_MSB_POS = SOFT_RESET_CNT_WIDTH - 1;
-//reg [SOFT_RESET_CNT_MSB_POS:0] soft_reset_cnt = (
-//  1 << SOFT_RESET_CNT_MSB_POS
+//melted_moon_clk_domain_reset vga_clk_domain_reset(
+//  .clk_50m(clk_50m),
+//  .pll_locked(pll_locked),
+//  .clk_main(clk_vga),
+//  .reset_main(reset_vga)
 //);
-
-//reg soft_reset_sys_reg = 1'b0;
-//reg soft_reset_sys_reg1 = 1'b0;
-//reg soft_reset_sys_reg2 = 1'b0;
-////reg prev_soft_reset_cpu_reg = 1'b0;
-//reg soft_reset_cpu_reg = 1'b0; //= 1'b0;
-//reg soft_reset_cpu_reg1 = 1'b0; //= 1'b0;
-//reg soft_reset_cpu_reg2 = 1'b0; //= 1'b0;
-
-reg reset_sys_reg = 1'b1;
-reg reset_sys_reg1 = 1'b1;
-reg reset_sys_reg2 = 1'b1;
-reg reset_cpu_reg = 1'b1; //= 1'b0;
-reg reset_cpu_reg1 = 1'b1; //= 1'b0;
-reg reset_cpu_reg2 = 1'b1; //= 1'b0;
-
-//always @(posedge clk) begin
-//	if (reset) begin
-//		pal_sys_reg2 <= 1'b0;
-//		pal_sys_reg1 <= 1'b0;
-//		pal_sys_reg <= 1'b0;
-//		cpu_io_regFileWriteData_sys_reg2 <= 32'd0;
-//		cpu_io_regFileWriteData_sys_reg1 <= 32'd0;
-//		cpu_io_regFileWriteData_sys_reg <= 32'd0;
-//	end else begin
-//		pal_sys_reg2 <= pal;
-//		pal_sys_reg1 <= pal_sys_reg2;
-//		pal_sys_reg <= pal_sys_reg1;
-//		cpu_io_regFileWriteData_sys_reg2 <= cpu_io_regFileWriteData_cpu_reg;
-//		cpu_io_regFileWriteData_sys_reg1 <= cpu_io_regFileWriteData_sys_reg2;
-//		cpu_io_regFileWriteData_sys_reg <= cpu_io_regFileWriteData_sys_reg1;
-//	end
-//end
-//
-//wire please_do_soft_reset = !soft_reset_cnt[SOFT_RESET_CNT_MSB_POS];
-
-//always @(posedge clk) begin
-//  //if (pll_locked) begin
-//    soft_reset_sys_reg2 <= reset || ioctl_download;//1'b0;//reset;
-//    soft_reset_sys_reg1 <= soft_reset_sys_reg2;
-//    soft_reset_sys_reg <= soft_reset_sys_reg1;
-//  //end
-//end
-//always @ (posedge clk/*clk_cpu*/) begin
-//  //if (pll_locked) begin
-//    soft_reset_cpu_reg2 <= soft_reset_sys_reg;//reset;//reset_sys_reg;
-//    soft_reset_cpu_reg1 <= soft_reset_cpu_reg2;
-//    soft_reset_cpu_reg <= soft_reset_cpu_reg1;
-//    //prev_soft_reset_cpu_reg <= soft_reset_cpu_reg;
-//    //reset_cpu_reg1 <= reset;
-//    //reset_cpu_reg <= reset;//reset_cpu_reg1; //reset;
-//    //if (
-//    //  //!please_do_soft_reset
-//    //  //&& 
-//    //  soft_reset_cpu_reg
-//    //  //&& !prev_soft_reset_cpu_reg
-//    //) begin
-//    //  soft_reset_cnt <= 0;
-//    //end else if (
-//    //  //!soft_reset_cnt[SOFT_RESET_CNT_MSB_POS]
-//    //  please_do_soft_reset
-//    //) begin
-//    //  soft_reset_cnt <= soft_reset_cnt + 1;
-//    //end
-//  //end
-//end
-wire my_soft_reset_0 = (
-  //reset || 
-  ioctl_download
-);
-wire my_soft_reset_1 = (
-  reset
-);
-
-
-always @(posedge clk) begin
-  if (pll_locked) begin
-    reset_sys_reg2 <= 1'b0;//reset;//(reset || my_soft_reset_0);//1'b0;//reset;
-  end
-  reset_sys_reg1 <= reset_sys_reg2;
-  reset_sys_reg <= reset_sys_reg1;
-end
-always @ (posedge clk/*clk_cpu*/) begin
-  //if (pll_locked) begin
-    reset_cpu_reg2 <= reset_sys_reg;//reset;//reset_sys_reg;
-    reset_cpu_reg1 <= reset_cpu_reg2;
-    reset_cpu_reg <= reset_cpu_reg1;
-    //reset_cpu_reg1 <= reset;
-    //reset_cpu_reg <= reset;//reset_cpu_reg1; //reset;
-  //end
-end
 
 wire [12:0] temp_sdram_a;
 //wire temp_sdram_dqmh;
@@ -197,28 +208,38 @@ wire [12:0] temp_sdram_a;
 assign {sdram_DQMH, sdram_DQML} = temp_sdram_a[12:11];
 assign sdram_A = temp_sdram_a;
 wire temp_ioctl_myWait;
-assign ioctl_wait = (
-  //|({
-    //reset,
-    //reset_sys_reg2,
-    //reset_sys_reg1,
-    //reset_sys_reg,
-    //reset_cpu_reg2,
-    //reset_cpu_reg1,
-    //reset_cpu_reg,
+assign ioctl_wait = temp_ioctl_myWait;
 
-    //soft_reset_sys_reg2,
-    //soft_reset_sys_reg1,
-    //soft_reset_sys_reg,
-    //soft_reset_cpu_reg2,
-    //soft_reset_cpu_reg1,
-    //soft_reset_cpu_reg,
-    temp_ioctl_myWait
-  //})
+wire my_soft_reset_0 = (
+  //reset || 
+  ioctl_download
 );
+wire my_soft_reset_1 = (
+  reset
+);
+
 
 MeltedMoon myMeltedMoon(
   .pllLocked(pll_locked),
+
+  .joystick_0(joystick_0),
+  .joystick_1(joystick_1),
+  .joystick_2(joystick_2),
+  .joystick_3(joystick_3),
+  .joystick_4(joystick_4),
+  .joystick_5(joystick_5),
+
+  .ddram_clk(ddram_clk),
+  .ddram_busy(ddram_busy),
+  .ddram_burstCnt(ddram_burstCnt),
+  .ddram_addr(ddram_addr),
+  .ddram_dout(ddram_dout),
+  .ddram_doutReady(ddram_doutReady),
+  .ddram_rd(ddram_rd),
+  .ddram_din(ddram_din),
+  .ddram_be(ddram_be),
+  .ddram_we(ddram_we),
+
   .sdram_dq(sdram_DQ),
   .sdram_a(temp_sdram_a),
   //.sdram_dqml(temp_sdram_dqml),
@@ -230,6 +251,7 @@ MeltedMoon myMeltedMoon(
   .sdram_nCas(sdram_nCAS),
   .sdram_cke(sdram_CKE),
   .sdram_clk(sdram_CLK),
+
   .ioctl_download(ioctl_download),
   .ioctl_index(ioctl_index),
   .ioctl_wr(ioctl_wr),
@@ -254,14 +276,20 @@ MeltedMoon myMeltedMoon(
   .vgaVisib(vgaVisib),
   .clk(
     //my_clk
-    clk
+    clk_sys
+    //my_cpu_clk
   ),
-  //.vgaClk_clk(my_vgaClk_clk),
-  //.vgaClk_reset(my_vgaClk_reset),
+  //.vgaClk_clk(
+  //  clk_vga
+  //),
+  //.vgaClk_reset(
+  //  reset_vga
+  //),
   .reset(
     //my_reset
     //reset_sys_reg
-    reset_cpu_reg
+    //reset_cpu_reg
+    reset_cpu
   ),
   .softReset_0(
     my_soft_reset_0
@@ -275,7 +303,7 @@ MeltedMoon myMeltedMoon(
   )
 );
 
-//always @(posedge clk) begin
+//always @(posedge clk_sys) begin
 //	if(scandouble) ce_pix <= 1;
 //		else ce_pix <= ~ce_pix;
 //
@@ -303,7 +331,7 @@ MeltedMoon myMeltedMoon(
 //	end
 //end
 //
-//always @(posedge clk) begin
+//always @(posedge clk_sys) begin
 //	if (hc == 529) HBlank <= 1;
 //		else if (hc == 0) HBlank <= 0;
 //

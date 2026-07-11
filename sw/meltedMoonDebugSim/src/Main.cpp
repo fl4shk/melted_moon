@@ -1,35 +1,5 @@
-//#include "config.h"
-
-#include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-#include <cstring>
-#include <cstdio>
-//#include <SDL.h>
-//#include <SDL_video.h>
-//#include <SDL_render.h>
-//#include <SDL_syswm.h>
-#include "liborangepower_src/game_stuff/engine_key_status_class.hpp"
-#include "liborangepower_src/math/vec2_classes.hpp"
-//#include "liborangepower_src/misc/misc_types.hpp"
-#include "liborangepower_src/misc/misc_includes.hpp"
-#include "liborangepower_src/sdl2/sdl.hpp"
-#include "liborangepower_src/sdl2/dpi_stuff.hpp"
-#include "liborangepower_src/sdl2/keyboard_stuff.hpp"
-#include "liborangepower_src/sdl2/sdl_video.hpp"
-#include "liborangepower_src/sdl2/sdl_render.hpp"
-#include "liborangepower_src/sdl2/sdl_surface.hpp"
-#include "liborangepower_src/sdl2/sdl_rect.hpp"
-#include <SDL_events.h>
-#include "liborangepower_src/misc/misc_output_funcs.hpp"
-//#include "VMeltedMoon.h"
-//#include "VMeltedMoon.h"
-#include "VMeltedMoonSimDut.h"
-#include "verilated_vcd_c.h"
-#include "verilated_fst_c.h"
-//#include <unistd.h>
-//#include "opcode/snowhousecpu-dasm-info-funcs.h"
+#include "MiscIncludes.hpp"
+#include "MeltedMoonDebugRiscvEmu.hpp"
 
 //struct snowhousecpu_dasm_info_t;
 //struct snowhousecpu_dasm_info_t;
@@ -41,9 +11,6 @@
 //    snowhousecpu_dasm_info_t* self,
 //);
 //}
-
-using namespace liborangepower::misc_output;
-using namespace liborangepower::integer_types;
 
 using snowhousecpu_dasm_info_rd32_func = int (*)(
     //struct snowhousecpu_dasm_info_t * /* self */
@@ -64,123 +31,127 @@ extern int snprint_one_insn_snowhousecpu(
 static int my_rd32_func(u8* buf, size_t offset);
 
 //static std::array<u8, sizeof(u32)> rd32_buf;
-class SnowhousecpuDasm final {
-private:     // variables
-    //u32 rd32_buf_src = u32(0x0u);
-    u32 _curr_pc = 0u;
-    bool _have_pre: 1 = false;
-    u32 _pre_imm = 0x0u;
-    std::array<u32, 2ul> _enc_instr_buf = {u32(0x0u), u32(0x0u)};
-    std::array<char, 128u> _dasm_buf;
-public:     // functions
-    inline int my_rd32_func(u8* buf, size_t offset) {
-        //memcpy(buf, &rd32_buf_src, sizeof(rd32_buf_src));
-        //printout(
-        //    "SnowhousecpuDasm::my_rd32_func(): debug: ",
-        //    "offset:", offset,
-        //    "\n"
-        //);
-        if (offset == 0) {
-            memcpy(
-                buf,
-                //_enc_instr_buf.data() + (offset / sizeof(u32)),
-                &_enc_instr_buf[offset / sizeof(u32)],
-                sizeof(u32)
-            );
-            return 0;
-        } else if (offset == 4) {
-            memcpy(
-                buf,
-                //_enc_instr_buf.data() + (offset / sizeof(u32)),
-                &_enc_instr_buf[offset / sizeof(u32)],
-                sizeof(u32)
-            );
-            //_have_pre = false;
-            return 0;
-        } else {
-            return 1;
-        }
-    }
+//class MeltedMoonCpuDasm final {
+//private:     // variables
+//    //u32 rd32_buf_src = u32(0x0u);
+//    u32 _curr_pc = 0u;
+//    #ifndef MELTED_MOON_RISCV
+//    bool _have_pre: 1 = false;
+//    u32 _pre_imm = 0x0u;
+//    std::array<u32, 2ul> _enc_instr_buf = {u32(0x0u), u32(0x0u)};
+//    #else
+//    std::array<u32, 1ul> _enc_instr_buf = {u32(0x0u)};
+//    #endif
+//    std::array<char, 128u> _dasm_buf;
+//public:     // functions
+//    inline int my_rd32_func(u8* buf, size_t offset) {
+//        //memcpy(buf, &rd32_buf_src, sizeof(rd32_buf_src));
+//        //printout(
+//        //    "SnowhousecpuDasm::my_rd32_func(): debug: ",
+//        //    "offset:", offset,
+//        //    "\n"
+//        //);
+//        if (offset == 0) {
+//            memcpy(
+//                buf,
+//                //_enc_instr_buf.data() + (offset / sizeof(u32)),
+//                &_enc_instr_buf[offset / sizeof(u32)],
+//                sizeof(u32)
+//            );
+//            return 0;
+//        } else if (offset == 4) {
+//            memcpy(
+//                buf,
+//                //_enc_instr_buf.data() + (offset / sizeof(u32)),
+//                &_enc_instr_buf[offset / sizeof(u32)],
+//                sizeof(u32)
+//            );
+//            //_have_pre = false;
+//            return 0;
+//        } else {
+//            return 1;
+//        }
+//    }
+//
+//    bool push_back(u32 my_reg_pc, u32 enc_instr);
+//
+//    inline bool have_pre() const {
+//        return _have_pre;
+//    }
+//    inline char* dasm_str() {
+//        return _dasm_buf.data();
+//    }
+//    inline const char* dasm_str() const {
+//        return _dasm_buf.data();
+//    }
+//};
 
-    bool push_back(u32 my_reg_pc, u32 enc_instr);
-
-    inline bool have_pre() const {
-        return _have_pre;
-    }
-    inline char* dasm_str() {
-        return _dasm_buf.data();
-    }
-    inline const char* dasm_str() const {
-        return _dasm_buf.data();
-    }
-};
-
-static SnowhousecpuDasm dasm;
-
-bool SnowhousecpuDasm::push_back(
-    u32 my_reg_pc, u32 enc_instr
-) {
-    _curr_pc = my_reg_pc;
-    //_dasm_buf.fill('\0');
-    const size_t buf_idx = (
-        _have_pre
-        ? size_t(1ul)
-        : size_t(0ul)
-    );
-    _enc_instr_buf.at(buf_idx) = enc_instr;
-
-    if (!_have_pre) {
-        _dasm_buf.fill('\0');
-        _have_pre = (
-            snprint_one_insn_snowhousecpu(
-                //&_curr_pc,
-                nullptr,
-                _dasm_buf.data(), _dasm_buf.size(),
-                ::my_rd32_func,
-                &_pre_imm,
-                false
-            )
-            == 4 // indicates that we have pre
-        );
-        if (!_have_pre) {
-            snprint_one_insn_snowhousecpu(
-                &_curr_pc,
-                _dasm_buf.data(), _dasm_buf.size(),
-                ::my_rd32_func,
-                nullptr,
-                false
-            );
-            //printout(
-            //    "debug (!_have_pre): dasm_str():",
-            //    dasm_str(),
-            //    "\n"
-            //);
-        }
-        return !_have_pre;
-    } else { // if (_have_pre)
-        snprint_one_insn_snowhousecpu(
-            &_curr_pc,
-            _dasm_buf.data(), _dasm_buf.size(),
-            ::my_rd32_func,
-            nullptr,
-            false
-        );
-        //printout(
-        //    "debug (_have_pre): dasm_str():",
-        //    dasm_str(),
-        //    "\n"
-        //);
-        //return false;
-        _have_pre = false;
-        return true;
-    }
-}
+//static MeltedMoonCpuDasm dasm;
+//
+//bool MeltedMoonCpuDasm::push_back(
+//    u32 my_reg_pc, u32 enc_instr
+//) {
+//    _curr_pc = my_reg_pc;
+//    //_dasm_buf.fill('\0');
+//    const size_t buf_idx = (
+//        _have_pre
+//        ? size_t(1ul)
+//        : size_t(0ul)
+//    );
+//    _enc_instr_buf.at(buf_idx) = enc_instr;
+//
+//    if (!_have_pre) {
+//        _dasm_buf.fill('\0');
+//        _have_pre = (
+//            snprint_one_insn_snowhousecpu(
+//                //&_curr_pc,
+//                nullptr,
+//                _dasm_buf.data(), _dasm_buf.size(),
+//                ::my_rd32_func,
+//                &_pre_imm,
+//                false
+//            )
+//            == 4 // indicates that we have pre
+//        );
+//        if (!_have_pre) {
+//            snprint_one_insn_snowhousecpu(
+//                &_curr_pc,
+//                _dasm_buf.data(), _dasm_buf.size(),
+//                ::my_rd32_func,
+//                nullptr,
+//                false
+//            );
+//            //printout(
+//            //    "debug (!_have_pre): dasm_str():",
+//            //    dasm_str(),
+//            //    "\n"
+//            //);
+//        }
+//        return !_have_pre;
+//    } else { // if (_have_pre)
+//        snprint_one_insn_snowhousecpu(
+//            &_curr_pc,
+//            _dasm_buf.data(), _dasm_buf.size(),
+//            ::my_rd32_func,
+//            nullptr,
+//            false
+//        );
+//        //printout(
+//        //    "debug (_have_pre): dasm_str():",
+//        //    dasm_str(),
+//        //    "\n"
+//        //);
+//        //return false;
+//        _have_pre = false;
+//        return true;
+//    }
+//}
 
 //static u32 rd32_buf_src = u32(0x0u);
 //std::array<u32, 2> enc_instr_buf;
-static int my_rd32_func(u8* buf, size_t offset) {
-    return dasm.my_rd32_func(buf, offset);
-}
+//static int my_rd32_func(u8* buf, size_t offset) {
+//    return dasm.my_rd32_func(buf, offset);
+//}
 
 //using std::cout;
 //using std::cin;
@@ -194,14 +165,16 @@ static constexpr double
         //= 25.0,
         //= 50.0,
         //= 75.0,
-        = 100.0,
+        //= 100.0,
+        = 98.0,
         //= 125.0,
         //= 150.0,
         //= 200.0,
         //= 24.0,
     PIXEL_CLK
         //= 100.0;
-        = 25.0;
+        = 24.5;
+        //= 25.0;
         //= 12.5;
         //= 6.0;
 static constexpr size_t
@@ -907,16 +880,25 @@ int main(int argc, char** argv) {
     }
 
     //bool prev_clk = false;
-    //for (;;) 
 
     std::string to_dbg_print = "";
 
     //rd32_buf.fill(0x0u);
 
-    std::array<u32, 16u> saved_gprs_arr;
+    static constexpr size_t NUM_GPRS = (
+        MeltedMoonDebugRiscvEmu::NUM_GPRS
+    );
+    static constexpr auto GPR_NAMES_ARR = (
+        MeltedMoonDebugRiscvEmu::GPR_NAMES_ARR
+    );
+    std::array<u32, NUM_GPRS> saved_gprs_arr;
+    //std::array<u32, NUM_GPRS> prev_saved_gprs_arr;
+    //std::array<u32, NUM_GPRS> emu_prev_saved_gprs_arr;
     saved_gprs_arr.fill(0x0u);
     u32 saved_reg_pc = 0x0u;
-    //std::ofstream ofile("meltedMoonDebugSim-output.s");
+    //u32 other_saved_reg_pc = 0x0u;
+    const char* my_ofile_name = "meltedMoonDebugSim-output.s";
+    //std::ofstream ofile(my_ofile_name);
     std::ofstream ofile;
 
     //auto& ofile = std::cout;
@@ -928,9 +910,158 @@ int main(int argc, char** argv) {
                 !trace
                 || trace->isOpen()
             )
-            &&
-            ofile.is_open()
+            && ofile.is_open()
         );
+    };
+    size_t stuck_animation_cnt = 0;
+    size_t my_reg_pc = 0;
+    size_t my_dbus_addr = 0;
+    size_t my_wr_data = 0;
+    std::array<size_t, 2> my_prev_reg_pc_arr = {0, 0};
+
+    std::string dasm_str;
+    auto should_start_debug_main_cond = [&]() -> bool {
+        //printout(
+        //    "my_dbus_addr: 0x", std::hex, my_dbus_addr, std::dec, "\n"
+        //);
+        const bool temp = (
+            //pc(n):0x1164
+            //wrData:0x7c0b    imm:0x0    dbusAddr:0x200fb42
+            //my_reg_pc == 0x1164ul
+            //&& my_wr_data == 0x7c0bul
+            //&& my_dbus_addr == 0x200fb42ul
+            //dasm_str.substr(0u, 3u) == "mul"
+            //my_reg_pc == 0x224u
+            //false
+
+            true
+            //my_reg_pc == 0x1c68u//0x3e774u //0x3f694u//0x40580 //0x3fd08u//0x400b4u
+            //my_reg_pc == 0x1104ul //0x10bcul //0xeacul//0xd24ul
+            ////stuck_animation_cnt == 5ul
+            //my_dbus_addr >= 0x16a6580ul//0x16a6584ul//0x16a6580ul // 0x16a6584ul
+            //&& my_dbus_addr <= 0x16a6587ul//0x16a657ul
+            //stuck_animation_cnt >= 6ul//11ul
+            //stuck_animation_cnt == 7ul//10ul
+            //true
+            //--------
+            //to_dbg_print
+            ////== "inner: out of range (maybe?): {175, 103}"
+            //== (
+            //    //"Rast::calc_visib(): _do_push_back(): "
+            //    //"y=96 x=136 iy=0 ix=136 "
+            //    //"N={0.000000, 0.000000, 1174.343750}"
+            //    //"R_InstallSpriteLump(): rotation == 0: sprtemp[frame].rotate:(0 0)"
+            //    //"P_InitPicAnims"
+            //    //"post S_UpdateSounds(...)"
+            //    //"post D_Display()"
+            //    //"P_Init: Init Playloop state."
+            //    //"M_Init: Init miscellaneous info."
+            //    //"R_Init: Init DOOM refresh daemon -"
+            //    //"P_Init: Init Playloop state"
+            //    //"R_Init: Init DOOM refresh daemon -"
+            //    //"finished with first doom_update()!"
+            //    //"my_set_rgb555_palette(): END"
+            //    //"doom1_wad_size=4196020"
+            //    //"ST_Init: Init status bar."
+            //    //"Found it! "
+            //    //"R_InitData"
+            //    //"HU_Init: Setting up heads up display."
+            //    //"ST_Init: Init status bar."
+            //    //"doom1_wad_size=4196020"
+            //    //"I_InitGraphics(): Here is `screens[0]`'s address (etc.): 169e1b8; 16a6441 16a6584"
+            //    //"./DEMO1.lmp: handle:10000c0 file:1000030"
+            //    //"S_Init: default sfx volume 8"
+            //    "ST_Init: Init status bar."
+            //)
+            //--------
+        );
+        //if (temp) {
+        //    printout(
+        //        "my_dbus_addr: 0x", std::hex, my_dbus_addr, std::dec, "\n"
+        //    );
+        //}
+        return temp;
+    };
+    //size_t stuck_pc_cnt = 0;
+
+
+    auto should_end_debug_main_cond = [&]() -> bool {
+        const bool ret = (
+            //(
+            //    //my_reg_pc == 0x10f0ul
+            //    //|| 
+            //    //my_reg_pc == 0x1198ul
+            //    //my_reg_pc == 0x1198ul
+            //    my_reg_pc >= 0x593c0u
+            //)
+            //false
+
+            //stuck_pc_cnt >= 512ul
+            //stuck_animation_cnt == 6ul//1ul//>= 6ul//11ul
+            //my_reg_pc == 0xeacul//0xd24ul
+            ////my_reg_pc == 
+            ////&& 
+            //my_prev_reg_pc_arr.at(0) == 0x53c78ul 
+            //&& my_prev_reg_pc_arr.at(1) == 0x53cfcul
+            ////(
+            ////    to_dbg_print.back()
+            ////    == (
+            ////        //'%'
+            ////        //'['
+            ////        //'.'
+            ////        //'5'
+            ////        '>'
+            ////    )
+            ////)
+            ////&& (
+            ////    to_dbg_print
+            ////    != (
+            ////        "M_Init: Init miscellaneous info."
+            ////    )
+            ////)
+            to_dbg_print
+            == (
+                //"[..Error: R_GenerateLookup: texture 55 is >64k"
+                //"Error: R_TextureNumForName: SW1STON2 not found"
+                //"[..Error: Z_CT at PureDOOM.h:46695"
+                //"finished with first doom_update()!"
+                //"okay, done with searching!"
+                "finished with first doom_update()!"
+            )
+        );
+        if (ret) {
+            printout("we should be ending!\n");
+        }
+
+        return ret;
+    };
+    bool my_prev_outpChar_valid = false;
+    //--------
+    // BEGIN: CPU debugging stuff
+    #ifdef RISCV_CPU_DEBUG
+    MeltedMoonDebugRiscvEmu emu("melted_moon_doom-riscv32-timedemo_3.bin");
+
+    size_t update_tp_cnt = 0u;
+    struct timeval tp;
+    std::memset(&tp, 0, sizeof(tp));
+    //gettimeofday(&tp, nullptr);
+    emu.exec_one_instr(tp, false);
+    #endif  // RISCV_CPU_DEBUG
+    // END: CPU debugging stuff
+    //--------
+
+    static constexpr u32 ADDR_TIMER_USEC_LO = u32(0x6000000ul);
+    static constexpr u32 ADDR_TIMER_USEC_HI = u32(0x6000004ul);
+    static constexpr u32 ADDR_TIMER_SEC_LO = u32(0x6000008ul);
+    static constexpr u32 ADDR_TIMER_SEC_HI = u32(0x600000cul);
+    auto my_check_instr_name = [&dasm_str](
+        const std::string& to_cmp
+    ) -> bool {
+        if (dasm_str.size() >= to_cmp.size()) {
+            return (dasm_str.substr(0u, to_cmp.size()) == to_cmp);
+        } else {
+            return false;
+        }
     };
 
     for 
@@ -949,6 +1080,27 @@ int main(int argc, char** argv) {
         //////!vga.do_exit();
         //++i
     ) {
+        //for (
+        //    //i64 i=my_prev_reg_pc_arr.size() - 1ll; i>=0ll; --i
+        //    i64 i=0; i<my_prev_reg_pc_arr.size(); ++i
+        //) {
+        //    //printout(
+        //    //    "testificate: ",
+        //    //    i, " ",
+        //    //    std::hex,
+        //    //    my_reg_pc, " ", my_prev_reg_pc_arr.at(i),
+        //    //    std::dec,
+        //    //    "\n"
+        //    //);
+        //    if (i == 0) {
+        //        my_prev_reg_pc_arr.at(i) = my_reg_pc;
+        //    } else {
+        //        my_prev_reg_pc_arr.at(i) = my_prev_reg_pc_arr.at(i - 1);
+        //    }
+        //}
+
+        //my_prev_reg_pc_arr.at(0) = my_reg_pc;
+        //my_prev_reg_pc_arr.at(1) = my_prev_reg_pc_arr
         //if (
         //    !ofile.is_open()
         //    //&& (
@@ -979,129 +1131,59 @@ int main(int argc, char** argv) {
                 vga.post_cycle();
             }
         //}
-        //printf(
-        //  //"testificate: %x %x; %lu; %lu %lu\n",
-        //  "testificate: %x %x; %lu\n",
-        //  u32(top->clk),
-        //  u32(top->vgaClk_clk),
-        //  tick_cnt
-        //  //(tick_cnt % 2) == 0,
-        //  //(tick_cnt % (2 * CLKS_PER_PIXEL)) == 0
-        //);
-        //if (myOutpChar.valid.toBoolean) {
-        //  if (myOutpChar.payload.toInt.toChar != '\n') {
-        //    toDbgPrint = toDbgPrint + myOutpChar.payload.toInt.toChar
-        //  } else {
-        //    println(toDbgPrint)
-        //    if (pw != null) {
-        //      pw.write(toDbgPrint + s"\n")
-        //      //if (
-        //      //  toDbgPrint
-        //      //  == "Error: R_InitTextures: Missing patch in texture COMP2"
-        //      //) {
-        //      //  pw.close()
-        //      //  i = numClkCycles.toLong
-        //      //}
-        //    }
-        //    toDbgPrint = ""
-        //  }
-        //}
 
-        //if (
-        //  pw != null
-        //  && myRegFileWriteActive
-        //) {
-        //  val tempCond = Array[Boolean](
-        //    myRegFileWriteData != mySavedRegsArr(myRegFileWriteAddr),
-        //    mySavedRegsArr.last != myLaggingRegPcAtRegFileWrite,
-        //  )
-        //  if (
-        //    tempCond(0)
-        //    || tempCond(1)
-        //  ) {
-        //    val myPcChngStr = (
-        //      if (tempCond(1)) (
-        //        "(y chng)"
-        //      ) else (
-        //        "(n chng)"
-        //      )
-        //    )
-        //    pw.write(
-        //      s"pc${myPcChngStr}:"
-        //        + f"$myLaggingRegPcAtRegFileWrite%08x" + s"    "
-        //      + s"wrAddr:" + f"$myRegFileWriteAddr" + s"    "
-        //      + s"wrData:" + f"$myRegFileWriteData%08x" + s"    "//s"\n"
-        //      //+ s"tempCond:(${tempCond(0)} ${tempCond(1)})" + s"\n"
-        //      //+ s"\n"
-        //    )
-        //    pw.write(
-        //      s"gprs:("
-        //    )
-        //    for (idx <- 0 until mySavedRegsArr.size - 1) {
-        //      if (idx < 13) {
-        //        pw.write(s"r${idx}")
-        //      } else if (idx == 13) {
-        //        pw.write(s"lr")
-        //      } else if (idx == 14) {
-        //        pw.write(s"fp")
-        //      } else if (idx == 15) {
-        //        pw.write(s"sp")
-        //      } else {
-        //        pw.write(s"eek! ${idx}")
-        //      }
-
-        //      pw.write(
-        //        s"="
-        //        + f"${mySavedRegsArr(idx)}%08x"
-        //      )
-        //      if (idx + 1 < mySavedRegsArr.size - 1) {
-        //        pw.write(
-        //          s" "
-        //        )
-        //      }
-        //    }
-        //    pw.write(
-        //      s")"
-        //      + s"\n"
-        //    )
-        //    //if (tempCond(0)) {
-        //      mySavedRegsArr(myRegFileWriteAddr) = myRegFileWriteData
-        //    //}
-
-        //    mySavedRegsArr(16) = myLaggingRegPcAtRegFileWrite
-        //  }
-        //}
-        static constexpr const char* GPR_NAMES_ARR[16] = {
-            "r0", "r1", "r2", "r3",
-            "r4", "r5", "r6", "r7",
-            "r8", "r9", "r10", "r11",
-            "r12", "lr", "fp", "sp",
-        };
+        //static constexpr const char* GPR_NAMES_ARR[16] = {
+        //    "r0", "r1", "r2", "r3",
+        //    "r4", "r5", "r6", "r7",
+        //    "r8", "r9", "r10", "r11",
+        //    "r12", "lr", "fp", "sp",
+        //};
+        //static constexpr const char* GPR_NAMES_ARR[NUM_GPRS] = {
+        //    "zero",
+        //    "ra", "sp", "gp", "tp",
+        //    "t0", "t1", "t2",
+        //    "s0", "s1",
+        //    "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
+        //    "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11",
+        //    "t3", "t4", "t5", "t6",
+        //};
 
         //const auto& my_wr_addr = top->cpuDbgInfo_regFileWriteAddr;
         const size_t my_wr_addr = (
             size_t(top->cpuDbgInfo_regFileWriteAddr)
         );
-        const size_t my_wr_data = (
+        my_wr_data = (
             size_t(top->cpuDbgInfo_regFileWriteData)
         );
-        const std::array<u32, 3> my_rd_mem_word_arr = {
+        const std::array<
+            u32, 
+            2//3
+        > my_rd_mem_word_arr = {
             u32(top->cpuDbgInfo_rdMemWordAtRegFileWrite_0),
             u32(top->cpuDbgInfo_rdMemWordAtRegFileWrite_1),
-            u32(top->cpuDbgInfo_rdMemWordAtRegFileWrite_2),
+            //u32(top->cpuDbgInfo_rdMemWordAtRegFileWrite_2),
         };
-        const std::array<u32, 4> my_gpr_idx_arr = {
+        const std::array<
+            u32, 3//4
+        > my_gpr_idx_arr = {
             u32(top->cpuDbgInfo_gprIdxVecAtRegFileWrite_0),
             u32(top->cpuDbgInfo_gprIdxVecAtRegFileWrite_1),
             u32(top->cpuDbgInfo_gprIdxVecAtRegFileWrite_2),
-            u32(top->cpuDbgInfo_gprIdxVecAtRegFileWrite_3),
+            //u32(top->cpuDbgInfo_gprIdxVecAtRegFileWrite_3),
         };
 
-        const size_t my_reg_pc = (
+        my_reg_pc = (
             top->cpuDbgInfo_laggingRegPcAtRegFileWrite
         );
         const size_t my_should_ignore_instr = (
             size_t(top->cpuDbgInfo_shouldIgnoreInstrAtRegFileWrite)
+        );
+        const size_t my_ps_id_bubble = (
+            size_t(top->cpuDbgInfo_myPsIdBubbleAtRegFileWrite)
+        );
+        const bool any_kind_of_ignore_please = (
+            my_should_ignore_instr
+            || my_ps_id_bubble
         );
         const u32 my_enc_instr = (
             u32(top->cpuDbgInfo_encInstrAtRegFileWrite)
@@ -1109,12 +1191,51 @@ int main(int argc, char** argv) {
         const u32 my_imm = (
             u32(top->cpuDbgInfo_immAtRegFileWrite)
         );
+        //if (my_reg_pc == 0x53bdcull) {
+        //    ++stuck_pc_cnt;
+        //} else {
+        //    stuck_pc_cnt = 0ull;
+        //}
 
         if (
             top->clk
             //!top->vgaClk_clk
         ) {
-            const auto& temp_cond = std::array{
+            //if (should_write_ofile()) {
+            //    fprintout(
+            //        ofile,
+            //        "test: ",
+            //        std::hex,
+            //        other_saved_reg_pc, " ", saved_reg_pc, " ", my_reg_pc,
+            //        std::dec,
+            //        "\n"
+            //    );
+            //}
+
+            //--------
+            my_dbus_addr = (
+                my_rd_mem_word_arr.at(
+                    //my_wr_addr
+                    //my_gpr_idx_arr.at(0)
+                    0
+                )
+                + my_imm
+            );
+            //if (
+            //    my_dbus_addr == 0x3ca40
+            //    || my_dbus_addr == 0x3ca42
+            //) {
+            //    if (should_write_ofile()) {
+            //        fprintout(
+            //            ofile,
+            //            std::hex,
+            //            "Here is your search result!\n",
+            //            std::dec
+            //        );
+            //    }
+            //}
+
+            const auto temp_cond = std::array{
                 (
                     bool(my_wr_data != saved_gprs_arr.at(my_wr_addr))
                     || (
@@ -1125,7 +1246,7 @@ int main(int argc, char** argv) {
                         //    || my_gpr_idx_arr.at(2)
                         //    || my_gpr_idx_arr.at(3)
                         //)
-                        //|| !my_should_ignore_instr
+                        //|| !any_kind_of_ignore_please
                     )
                 ),
                 bool(saved_reg_pc != my_reg_pc),
@@ -1140,47 +1261,31 @@ int main(int argc, char** argv) {
                 )
             );
             //const bool other_temp_cond = (
-            //    my_should_ignore_instr
+            //    any_kind_of_ignore_please
             //    && !prev_should_ignore_instr
             //);
             //const bool other_temp_cond_pre = (
             //    dasm.have_pre()
             //);
-            if (
-                (
-                    !my_should_ignore_instr
-                    //|| other_temp_cond
-                )
-                && (
-                    //temp_cond.at(0)
-                    //|| temp_cond.at(1)
-                    my_full_temp_cond
-                )
-            ) {
-                dasm.push_back(
-                    my_reg_pc,
-                    my_enc_instr
-                );
-            }
+            //if (
+            //    (
+            //        !any_kind_of_ignore_please
+            //        //|| other_temp_cond
+            //    )
+            //    && (
+            //        //temp_cond.at(0)
+            //        //|| temp_cond.at(1)
+            //        my_full_temp_cond
+            //    )
+            //) {
+            //}
             if (
                 trace
                 && !trace->isOpen()
                 //&& vga.refresh_cnt() > 3
                 //&& (my_reg_pc == u32(0x10u))
                 //&& (my_reg_pc == u32(0x50c08u))
-                && (
-                    to_dbg_print
-                    //== "inner: out of range (maybe?): {175, 103}"
-                    == (
-                        //"Rast::calc_visib(): _do_push_back(): "
-                        //"y=96 x=136 iy=0 ix=136 "
-                        //"N={0.000000, 0.000000, 1174.343750}"
-                        //"R_InstallSpriteLump(): rotation == 0: sprtemp[frame].rotate:(0 0)"
-                        //"P_InitPicAnims"
-                        //"post S_UpdateSounds(...)"
-                        "post D_Display()"
-                    )
-                )
+                && should_start_debug_main_cond()
                 //&& (
                 //    top->cpuDbgDbusWriteFire
                 //)
@@ -1190,49 +1295,73 @@ int main(int argc, char** argv) {
                 );
                 do_open_trace(
                     //15
-                    10
+                    //10
                     //5
                 );
             }
-            //if (
-            //    trace
-            //    && trace->isOpen()
-            //    && (
-            //        to_dbg_print.back() == '%'
-            //    )
-            //) {
-            //    vga.set_do_exit(true);
-            //}
+            if (
+                !ofile.is_open()
+                && should_start_debug_main_cond()
+            ) {
+                //ofile.open(my_ofile_name);
+            }
+            if (
+                (
+                    (
+                        trace
+                        && trace->isOpen()
+                    ) || (
+                        ofile.is_open()
+                    )
+                )
+                && should_end_debug_main_cond()
+            ) {
+                printout(
+                    "doing vga.do_exit(true)!\n"
+                );
+                vga.set_do_exit(true);
+            }
             //if (my_reg_pc == u32(0x1c648u)) {
             //    printout(
             //        "debug: ",
             //        "have_pre:", dasm.have_pre(), " ",
             //        "shouldIgnoreInstr:",
-            //            my_should_ignore_instr,
+            //            any_kind_of_ignore_please,
             //        "\n"
             //    );
             //}
             if (
-                (
-                    !my_should_ignore_instr
-                    //&& (
-                    //    //dasm.have_pre()
-                    //    //|| 
-                    //    top->regFileWriteActive
-                    //)
-                    && (
-                        //temp_cond.at(0)
-                        //|| temp_cond.at(1)
-                        my_full_temp_cond
-                    )
-                )
-                //|| (
-                //    //my_should_ignore_instr
-                //    //&& !prev_should_ignore_instr
-                //    other_temp_cond
-                //)
-                //|| dasm.have_pre()
+                !any_kind_of_ignore_please
+                && my_full_temp_cond
             ) {
+                #ifdef RISCV_CPU_DEBUG
+                {
+                    auto temp_dasm_str = (
+                        MeltedMoonDebugRiscvEmu::disasm_one_instr(
+                            my_enc_instr,
+                            //saved_reg_pc
+                            my_reg_pc
+                        )
+                    );
+
+                    if (temp_dasm_str) {
+                        dasm_str = *temp_dasm_str;
+                    } else {
+                        std::printf(
+                            //stderr,
+                            "Eek! Bad Instr! my_enc_instr:%x pc:%llx\n",
+                            my_enc_instr,
+                            (unsigned long long)my_reg_pc
+                        );
+                        vga.set_do_exit(true);
+                        //if (ofile.is_open) {
+                        //    ofile.close();
+                        //}
+                        //std::exit(1);
+                    }
+                }
+                #endif      // RISCV_CPU_DEBUG
+                //--------
                 const std::string my_pc_chng_str = (
                     temp_cond.at(1)
                     ? "(y)"
@@ -1249,7 +1378,8 @@ int main(int argc, char** argv) {
                     fprintout(
                         ofile,
                         "disasm:(",
-                            dasm.dasm_str(),
+                            //dasm.dasm_str(),
+                            dasm_str,
                         ")",
                         "    "
                     );
@@ -1315,12 +1445,7 @@ int main(int argc, char** argv) {
                         std::hex,
                         "wrData:", "0x", my_wr_data, "    ",
                         "imm:", "0x", my_imm, "    ",
-                        "dbusAddr:", "0x", 
-                            (my_rd_mem_word_arr.at(
-                                //my_wr_addr
-                                //my_gpr_idx_arr.at(0)
-                                0
-                            ) + my_imm),
+                        "dbusAddr:", "0x", my_dbus_addr,
                         "    ",
                         std::dec
                     );
@@ -1386,12 +1511,215 @@ int main(int argc, char** argv) {
                         my_wr_data
                     );
                 }
+                //--------
+                //--------
+                //other_saved_reg_pc = saved_reg_pc;
+                //--------
+                // BEGIN: CPU debugging stuff
+                #ifdef RISCV_CPU_DEBUG
+                if (
+                    my_wr_addr != 0
+                    && my_check_instr_name("lw ")
+                ) {
+                    if (my_dbus_addr == ADDR_TIMER_USEC_LO) {
+                        tp.tv_usec = my_wr_data;
+                    } else if (my_dbus_addr == ADDR_TIMER_SEC_LO) {
+                        tp.tv_sec = my_wr_data;
+                    }
+                }
+                #endif      // RISCV_CPU_DEBUG
+                // END: CPU debugging stuff
+                //--------
+            }
+
+            //--------
+            // BEGIN: CPU debugging stuff
+            #ifdef RISCV_CPU_DEBUG
+            if (
+                !any_kind_of_ignore_please
+                && (
+                    //temp_cond.at(0)
+                    //|| temp_cond.at(1)
+                    //my_full_temp_cond
+                    bool(saved_reg_pc != my_reg_pc)
+                )
+                //&& my_wr_addr != 0
+            ) {
+                bool found_same_gprs = false;
+                MeltedMoonDebugRiscvEmu::ExecOneInstrRet exec_temp;
+                for (
+                    size_t gprs_chk_cnt=0;
+                    gprs_chk_cnt<1u;//2u;//1u; //128u; 
+                    ++gprs_chk_cnt
+                ) {
+                    exec_temp = emu.exec_one_instr(tp, false);
+                    //dasm.push_back(
+                    //    my_reg_pc,
+                    //    my_enc_instr
+                    //);
+                    //--------
+                    //if (exec_temp.sw_read_from_tp) {
+                    //    update_tp_cnt = 0u;
+                    //} else {
+                    //    ++update_tp_cnt;
+                    //    if (update_tp_cnt >= 16u) {
+                    //        update_tp_cnt = 0u;
+                    //        gettimeofday(&tp, nullptr);
+                    //    }
+                    //}
+                    bool found_any_not_equal = false;
+                    for (
+                        size_t gpr_file_idx=0;
+                        gpr_file_idx<NUM_GPRS;
+                        ++gpr_file_idx
+                    ) {
+                        if (
+                            saved_gprs_arr.at(gpr_file_idx)
+                            != exec_temp.gpr_file->at(gpr_file_idx)
+                        ) {
+                            found_any_not_equal = true;
+                            break;
+                        }
+                    }
+                    found_same_gprs = !found_any_not_equal;
+                    if (found_same_gprs) {
+                        break;
+                    }
+                    //--------
+                    //dasm_str = exec_temp.disasm_str;
+                    //if (
+                    //    other_saved_reg_pc == 0x405ccu
+                    //    && my_reg_pc == 0x40608u
+                    //) {
+                    //}
+                    //--------
+                    //--------
+                }
+                if (
+                    //exec_temp.saved_pc != saved_reg_pc //other_saved_reg_pc
+                    //exec_temp.saved_pc != my_reg_pc //other_saved_reg_pc
+                    //other_saved_reg_pc == 0x405ccu
+                    //&& my_reg_pc == 0x40608u
+                    //temp_cond.at(1)
+                    //&& 
+                    //exec_temp.pc != my_reg_pc
+                    !found_same_gprs
+                    //true
+                ) {
+                    std::array<std::ostream*, 2> my_ostm_arr = {
+                        &ofile,
+                        &std::cout,
+                    };
+                    for (
+                        size_t ostm_idx=0;
+                        ostm_idx<my_ostm_arr.size();
+                        ++ostm_idx
+                    ) {
+                        if (
+                            (
+                                ostm_idx == 0
+                                && should_write_ofile()
+                            ) || (
+                                ostm_idx == 1
+                            )
+                        ) {
+                            osprintout(
+                                *my_ostm_arr.at(ostm_idx),
+                                std::hex,
+                                "Eek! gprs not same! "
+                                "my_reg_pc:", my_reg_pc, " ",
+                                "saved_reg_pc:", saved_reg_pc, " ",
+                                "exec_temp.saved_pc:",
+                                    exec_temp.saved_pc,
+                                " ",
+                                "exec_temp.pc:",
+                                    exec_temp.pc,
+                                " ",
+                                std::dec,
+                                "\n"
+                            );
+                            for (
+                                size_t gpr_file_idx=0;
+                                gpr_file_idx<NUM_GPRS;
+                                ++gpr_file_idx
+                            ) {
+                                const auto saved_gpr = (
+                                    saved_gprs_arr.at(gpr_file_idx)
+                                );
+                                const auto emu_gpr = (
+                                    exec_temp.gpr_file->at(gpr_file_idx)
+                                );
+                                //if {
+                                //    //found_any_not_equal = true;
+                                //    //break;
+                                //}
+                                osprintout(
+                                    *my_ostm_arr.at(ostm_idx),
+                                    GPR_NAMES_ARR[gpr_file_idx],
+                                    ": ",
+                                    std::hex,
+                                    "saved_gpr:", saved_gpr, " ",
+                                    "emu_gpr:", emu_gpr, " ",
+                                    "same? ",
+                                    std::string(
+                                        (saved_gpr == emu_gpr)
+                                        ? std::string("YES")
+                                        : std::string("NO")
+                                    ),
+                                    std::dec,
+                                    "\n"
+                                );
+                            }
+                            //ofile.close();
+                        }
+                    }
+                    //std::exit(1);
+                    if (!found_same_gprs) {
+                        vga.set_do_exit(true);
+                    }
+                }
+            }
+            #endif      // RISCV_CPU_DEBUG
+            // END: CPU debugging stuff
+            //--------
+            if (
+                (
+                    !any_kind_of_ignore_please
+                    //&& (
+                    //    //dasm.have_pre()
+                    //    //|| 
+                    //    top->regFileWriteActive
+                    //)
+                    && (
+                        //temp_cond.at(0)
+                        //|| temp_cond.at(1)
+                        my_full_temp_cond
+                    )
+                )
+                //|| (
+                //    //any_kind_of_ignore_please
+                //    //&& !prev_should_ignore_instr
+                //    other_temp_cond
+                //)
+                //|| dasm.have_pre()
+            ) {
                 saved_reg_pc = my_reg_pc;
             }
 
-            if (top->outpChar_valid) {
+            if (
+                !my_prev_outpChar_valid
+                && top->outpChar_valid
+            ) {
                 if (char(top->outpChar_payload) != '\n') {
                     to_dbg_print += char(top->outpChar_payload);
+                    //if (
+                    //    to_dbg_print 
+                    //    == (
+                    //        "my_set_rgb555_palette(): END"
+                    //    )
+                    //) {
+                    //    ++stuck_animation_cnt;
+                    //}
                 } 
                 //else if (char(top->outpChar_payload) > 'z') {
                 //    //vga.set_do_exit(true);
@@ -1407,6 +1735,9 @@ int main(int argc, char** argv) {
                     to_dbg_print = "";
                 }
             }
+            my_prev_outpChar_valid = top->outpChar_valid;
+            //--------
+            //--------
         }
 
         //top->eval();
@@ -1416,7 +1747,7 @@ int main(int argc, char** argv) {
         //}
         end_tick();
         //prev_clk = top->vgaClk_clk;
-        //prev_should_ignore_instr = my_should_ignore_instr;
+        //prev_should_ignore_instr = any_kind_of_ignore_please;
         //prev_other_temp_cond = other_temp_cond;
         //if (saved_reg_pc == 0x41f4ull) {
         //    break;

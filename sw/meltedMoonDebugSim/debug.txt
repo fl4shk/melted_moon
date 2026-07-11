@@ -1,0 +1,154 @@
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+
+// new code
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+
+// new code 1
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+
+//--------
+finished with first doom_update()!
+NOTE: doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+NOTE: doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+NOTE: doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+NOTE: doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+NOTE: doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+NOTE: doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+Found it! 33417
+Found it! 33740
+we should be ending!
+doing vga.do_exit(true)!
+
+
+//--------
+Found it! i:33417 (my_screen_buf + i)=16811001 (my_screen_buf + i - 2)=16810999
+Found it! i:33740 (my_screen_buf + i)=16811324 (my_screen_buf + i - 2)=16811322
+
+doom_init(): Here is `screen_buffer`'s address (etc.): 1000170; 10083f9 100853c
+load address (16-bit) for first `screen_buffer[i]`: dbusAddr:0x16a644[0-3]
+load address (16-bit) for second `screen_buffer[i]`: dbusAddr:0x16a658[4-7]
+
+I_InitGraphics(): Here is `screens[0]`'s address (etc.): 169e1b8; 16a6441 16a6584
+
+//--------
+
+my_software_3d_renderer:
+#77473f
+#dfa767
+#77473f
+
+def do_extract(col: int) -> tuple:
+   col_r_24bpp = (col >> 16) & 0xff
+   col_g_24bpp = (col >> 8) & 0xff
+   col_b_24bpp = (col >> 0) & 0xff
+   col_r_15bpp = (col_r_24bpp >> 3) & 0x1f
+   col_g_15bpp = (col_g_24bpp >> 3) & 0x1f
+   col_b_15bpp = (col_b_24bpp >> 3) & 0x1f
+   return (col_r_15bpp, col_g_15bpp, col_b_15bpp)
+
+left_right = do_extract(0x77473f)
+middle = do_extract(0xdfa767)
+
+left_right_hex = [hex(x) for x in left_right]
+middle_hex = [hex(x) for x in middle]
+
+>>> left_right_hex
+['0xe', '0x8', '0x7']
+>>> middle_hex
+['0x1b', '0x14', '0xc']
+
+>>> (left_right[0] << 0) | (left_right[1] << 5) | (left_right[2] << 10)
+7438
+>>> hex((left_right[0] << 0) | (left_right[1] << 5) | (left_right[2] << 10))
+'0x1d0e'
+
+>>> (middle[0] << 0) | (middle[1] << 5) | (middle[2] << 10)
+12955
+>>> hex((middle[0] << 0) | (middle[1] << 5) | (middle[2] << 10))
+'0x329b'
+
+
+//--------
+debug_texture: (almost) top right has
+0x7f07ff then 0x7707ff, should be swapped!
+
+left_hex = [hex(x) for x in left]
+right_hex = [hex(x) for x in right]
+
+>>> left = do_extract(0x7f07ff)
+>>> left
+(15, 0, 31)
+>>> right = do_extract(0x7707ff)
+>>> right
+(14, 0, 31)
+>>> left_hex = [hex(x) for x in left]
+... right_hex = [hex(x) for x in right]
+...
+>>> left_hex
+['0xf', '0x0', '0x1f']
+>>> right_hex
+['0xe', '0x0', '0x1f']
+
+(left[0] << 0) | (left[1] << 5) | (left[2] << 10)
+hex((left[0] << 0) | (left[1] << 5) | (left[2] << 10))
+
+(right[0] << 0) | (right[1] << 5) | (right[2] << 10)
+hex((right[0] << 0) | (right[1] << 5) | (right[2] << 10))
+
+>>> (left[0] << 0) | (left[1] << 5) | (left[2] << 10)
+31759
+>>> hex((left[0] << 0) | (left[1] << 5) | (left[2] << 10))
+'0x7c0f'
+
+>>> (right[0] << 0) | (right[1] << 5) | (right[2] << 10)
+31758
+>>> hex((right[0] << 0) | (right[1] << 5) | (right[2] << 10))
+'0x7c0e'
+
+
+////--------
+//addr: 0xfff784
+//data: 0x1538
+//isWrite: True
+//
+//lineWordRam.io.wrEn: True
+//lineWordRam.io.wrAddr: 0x1e1
+//lineWordRam.io.wrByteEn: 0xf
+//lineWordRam.io.wrData: 0x1538
+//
+//io.laggingRegPc: 0x54838

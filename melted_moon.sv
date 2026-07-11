@@ -180,7 +180,7 @@ assign USER_OUT = '1;
 assign {UART_RTS, UART_TXD, UART_DTR} = 0;
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 //assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
-assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = '0;  
+//assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = '0;  
 
 assign VGA_SL = 0;
 assign VGA_F1 = 0;
@@ -301,12 +301,27 @@ wire ioctl_rd;
 wire [31:0] ioctl_file_ext;
 wire ioctl_wait;
 
+wire [31:0] joystick_0;
+wire [31:0] joystick_1;
+wire [31:0] joystick_2;
+wire [31:0] joystick_3;
+wire [31:0] joystick_4;
+wire [31:0] joystick_5;
+
 hps_io #(.CONF_STR(CONF_STR), .WIDE(IOCTL_WIDE)) hps_io
 (
 	.clk_sys(clk_sys),
 	.HPS_BUS(HPS_BUS),
+
 	.EXT_BUS(),
 	.gamma_bus(),
+
+	.joystick_0(joystick_0),
+	.joystick_1(joystick_1),
+	.joystick_2(joystick_2),
+	.joystick_3(joystick_3),
+	.joystick_4(joystick_4),
+	.joystick_5(joystick_5),
 
 	.forced_scandoubler(forced_scandoubler),
 
@@ -333,17 +348,21 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(IOCTL_WIDE)) hps_io
 ///////////////////////   CLOCKS   ///////////////////////////////
 
 wire clk_sys;
+wire clk_vga;
 //wire clk_cpu;
 //assign clk_sys = CLK_50M;
 //assign clk_cpu = CLK_50M;
 //assign clk_cpu = clk_sys;
 //wire vgaClk_clk;
+
+
 wire pll_locked;
 pll pll
 (
 	.refclk(CLK_50M),
 	.rst(0),
 	.outclk_0(clk_sys),
+	//.outclk_1(clk_vga),
 	//.outclk_1(
 	//  //clk_cpu
 	//  vgaClk_clk
@@ -351,8 +370,9 @@ pll pll
 	.locked(pll_locked)
 );
 
-//wire reset_main = RESET | status[0] | buttons[1]; //| !pll_locked;
-wire reset_main = status[0] | buttons[1]; //| !pll_locked;
+
+wire reset_main = RESET | status[0] | buttons[1]; //| !pll_locked;
+//wire reset_main = status[0] | buttons[1]; //| !pll_locked;
 
 //logic prev_ioctl_download = 1'b0;
 ////always_ff @(posedge clk_sys or posedge reset_main) begin
@@ -394,10 +414,19 @@ wire [1:0] col = status[4:3];
 
 melted_moon my_melted_moon
 (
-	.clk(clk_sys),
+  .clk_50m(CLK_50M),
+	.clk_sys(clk_sys),
+	//.clk_vga(clk_vga),
 	//.vgaClk_clk(vgaClk_clk),
 	//.clk_cpu(clk_cpu),
 	.reset(reset),
+
+	.joystick_0(joystick_0),
+	.joystick_1(joystick_1),
+	.joystick_2(joystick_2),
+	.joystick_3(joystick_3),
+	.joystick_4(joystick_4),
+	.joystick_5(joystick_5),
 	
 	.pal(status[2]),
 	.scandouble(forced_scandoubler),
@@ -450,10 +479,21 @@ melted_moon my_melted_moon
 	.sdram_nCS(SDRAM_nCS),
 	.sdram_nCAS(SDRAM_nCAS),
 	.sdram_nRAS(SDRAM_nRAS),
-	.sdram_nWE(SDRAM_nWE)
+	.sdram_nWE(SDRAM_nWE),
+
+	.ddram_clk(DDRAM_CLK),
+	.ddram_busy(DDRAM_BUSY),
+	.ddram_burstCnt(DDRAM_BURSTCNT),
+	.ddram_addr(DDRAM_ADDR),
+	.ddram_dout(DDRAM_DOUT),
+	.ddram_doutReady(DDRAM_DOUT_READY),
+	.ddram_rd(DDRAM_RD),
+	.ddram_din(DDRAM_DIN),
+	.ddram_be(DDRAM_BE),
+	.ddram_we(DDRAM_WE)
 );
 
-assign CLK_VIDEO = clk_sys;
+assign CLK_VIDEO = clk_sys;//clk_vga; //clk_sys;
 //assign CE_PIXEL = ce_pix;
 
 

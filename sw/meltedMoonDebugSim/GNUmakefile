@@ -64,9 +64,18 @@ ASMOUTDIR:=asmouts$(DEBUG_SUFFIX)
 DEPDIR:=deps$(DEBUG_SUFFIX)
 
 
+#CXX_FLAGS:=$(CXX_FLAGS) \
+#    -DMELTED_MOON_DO_DISASM=1 \
+#	-I$(V_OBJDIR) \
+#	$(shell pkg-config --cflags verilator)
+
+#CXX_FLAGS:=$(CXX_FLAGS) \
+#    -DMELTED_MOON_DO_DISASM=1
+    
 CXX_FLAGS:=$(CXX_FLAGS) \
 	-I$(V_OBJDIR) \
 	$(shell pkg-config --cflags verilator)
+
 LD_FLAGS:=$(LD_FLAGS) $(shell pkg-config --libs verilator)
 
 FINAL_BASE_FLAGS:=$(OPTIMIZATION_LEVEL) \
@@ -92,14 +101,18 @@ VC_OUTMK:=V$(V_TOP).mk
 VC:=verilator
 VC_CFLAGS:=-CFLAGS -O2
 VC_LDFLAGS:=-LDFLAGS -lm
-VC_JOBS:=1#16#24#16#8#12#8#4
-ifdef TRACE
+VC_JOBS:=16#1#16#24#16#8#12#8#4
+ifeq ($(TRACE),1)
     MY_TRACE:=--trace-fst
     MY_TRACE_INST_DEFINE:="new VerilatedFstC"#nullptr##"nullptr"
 else
     MY_TRACE:=#--trace-fst
     MY_TRACE_INST_DEFINE:="nullptr"#"new VerilatedFstC"#nullptr##"nullptr"
 endif
+ifeq ($(RISCV_CPU_DEBUG),1)
+    CXX_FLAGS:=-DRISCV_CPU_DEBUG=1 $(CXX_FLAGS)
+endif
+
 TRACE_THREADS:=#--trace-threads 2
 MY_THREADS:=1#4#1#2#24#2#1#16#1#4 #8
 VC_FLAGS:=--cc -Wno-lint \

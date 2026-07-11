@@ -1,0 +1,89 @@
+_vblank_irq_handler(): doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+_vblank_irq_handler(): doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+_vblank_irq_handler(): doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+_vblank_irq_handler(): doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+_vblank_irq_handler(): doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+_vblank_irq_handler(): doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+_vblank_irq_handler(): doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+_vblank_irq_handler(): doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+_vblank_irq_handler(): doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+_vblank_irq_handler(): doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+
+//--------
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+
+//--------
+// new code
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+
+//--------
+// new code 1
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+my_set_rgb555_palette(): END
+
+//--------
+finished with first doom_update()!
+NOTE: doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+NOTE: doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+NOTE: doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+NOTE: doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+NOTE: doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+NOTE: doing framebuffer stuff!
+my_set_rgb555_palette(): BEGIN
+my_set_rgb555_palette(): END
+Found it! 33417
+Found it! 33740
+we should be ending!
+doing vga.do_exit(true)!

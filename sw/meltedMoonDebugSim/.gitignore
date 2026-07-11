@@ -13,3 +13,4 @@ meltedMoonDebugSim
 meltedMoonDebugSim_debug
 *.fst
 *.vcd
+.gdb_history
