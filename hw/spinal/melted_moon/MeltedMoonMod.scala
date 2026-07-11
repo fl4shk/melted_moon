@@ -1324,6 +1324,10 @@ case class MeltedMoonLcvBusToDdramBridge(
     Reg(UInt(lcvBusCfg.burstCntWidth bits))
     init(lcvBusCfg.maxBurstSizeMinus1)
   )
+  val rWrDdramBurstCnt = (
+    Reg(UInt(log2Up(myDdramBurstCnt) bits))
+    init(myDdramBurstCnt - 1)
+  )
 
   val stateWidth = 3
   def STATE_IDLE = U(s"${stateWidth}'b000")
@@ -1481,19 +1485,26 @@ case class MeltedMoonLcvBusToDdramBridge(
       io.ddram.addr(myDdramAddrRange) := (
         rSavedLcvH2dPayload.addr(myLcvAddrRange)
       )
+      when (wrFifo.io.pop.fire) {
+        rWrDdramBurstCnt := rWrDdramBurstCnt - 1
+      }
       when (
-        io.ddram.we && !io.ddram.busy
-        //&& !wrFifo.io.occupancy.orR
-        //&& wrFifo.io.occupancy === 1
-        ////&& RegNext(wrFifo.io.pop.fire)
-        //&& wrFifo.io.pop.fire
-        && !wrFifo.io.pop.valid
+        //io.ddram.we && !io.ddram.busy
+        ////&& !wrFifo.io.occupancy.orR
+        ////&& wrFifo.io.occupancy === 1
+        ////////&& RegNext(wrFifo.io.pop.fire)
+        //&& 
+        wrFifo.io.pop.fire
+        && !rWrDdramBurstCnt.orR
+        //&& !wrFifo.io.pop.valid
       ) {
         io.ddram.we := False
         rState := STATE_WR_BURST_LCV_D2H_RESP
       }
       io.ddram.din := wrFifo.io.pop.payload
-      wrFifo.io.pop.ready := !io.ddram.busy
+      wrFifo.io.pop.ready := (
+        io.ddram.we && !io.ddram.busy
+      )
     }
     is (STATE_WR_BURST_LCV_D2H_RESP) {
       io.lcvBus.d2hBus.valid := True
@@ -2615,21 +2626,21 @@ case class MeltedMoonFbDdram(
   //  popClock=vgaClkDomain,
   //)
 
-  //val rMyDbgResetState = (
-  //  Reg(Bool(), init=True)
-  //)
-  //when (
-  //  //fell(io.ioctl.download)
-  //  if (
-  //    io.ddram != null
-  //  ) (
-  //    fell(io.joystick(0)(0))
-  //  ) else (
-  //    True
-  //  )
-  //) {
-  //  rMyDbgResetState := False
-  //}
+  val rMyDbgResetState = (
+    Reg(Bool(), init=True)
+  )
+  when (
+    //fell(io.ioctl.download)
+    if (
+      io.ddram != null
+    ) (
+      fell(io.joystick(0)(0))
+    ) else (
+      True
+    )
+  ) {
+    rMyDbgResetState := False
+  }
 
   val rMyCpuResetState = (
     Reg(Bool(),
@@ -3024,23 +3035,23 @@ case class MeltedMoonFbDdram(
       val myLcvBusToDdramBridge = MeltedMoonLcvBusToDdramBridge(cfg=cfg)
       io.ddram <> myLcvBusToDdramBridge.io.ddram
 
-      //val myDdramResetArea =
-      //new ResetArea(
-      //  reset=(
-      //    //fell(
-      //    //  io.joystick(0)(0)
-      //    //)
-      //    rMyDbgResetState
-      //  ),
-      //  cumulative=(
-      //    false
-      //  )
-      //) {
+      val myDdramResetArea =
+      new ResetArea(
+        reset=(
+          //fell(
+          //  io.joystick(0)(0)
+          //)
+          rMyDbgResetState
+        ),
+        cumulative=(
+          false
+        )
+      ) {
         myLcvBusToDdramBridge.io.lcvBus <-/< (
           myFbDcache.io.hiBus
           //arbiter.io.dev
         )
-      //}
+      }
 
       //--------
 
@@ -3089,51 +3100,45 @@ case class MeltedMoonFbDdram(
     //vgaArea.lcvVgaCtrl.io.push <-/< myFbCtrl.io.pop
     //vgaPushFifo.io.push <-/< myFbCtrl.io.pop
 
-    //when (!rMyDbgResetState) {
-    //  vgaPushInpStm <-/< myFbCtrl.io.pop
-    //} otherwise {
-    //  myFbCtrl.io.pop.ready := False
-    //  vgaPushInpStm.valid := True
-    //  vgaPushInpStm.payload.r := 0x1f
-    //  vgaPushInpStm.payload.g := 0x1f
-    //  vgaPushInpStm.payload.b := 0x1f
-    //}
-
     //vgaArea.vgaCtrl.io.pixels <-/< myFbCtrl.io.pop
 
-    //val myFbCtrlResetArea = 
-    //new ResetArea(
-    //  reset=(
-    //    //fell(
-    //    //  io.joystick(0)(0)
-    //    //)
-    //    rMyDbgResetState
-    //  ),
-    //  cumulative=(
-    //    false
-    //  )
-    //) {
+    val myFbCtrlResetArea = 
+    new ResetArea(
+      reset=(
+        //fell(
+        //  io.joystick(0)(0)
+        //)
+        rMyDbgResetState
+      ),
+      cumulative=(
+        false
+      )
+    ) {
       val myFbCtrl = LcvBusFramebufferCtrl(cfg=cfg.myFbCfg)
       vgaPushInpStm <-/< myFbCtrl.io.pop
       myFbArbFbCtrlHost <-/< myFbCtrl.io.bus
-    //}
-    //when (rMyDbgResetState) {
-    //  vgaPushInpStm.valid := rMyDbgResetState
-    //  vgaPushInpStm.payload.r := 0x1f
-    //  vgaPushInpStm.payload.g := 0x1f
-    //  vgaPushInpStm.payload.b := 0x1f
-    //} otherwise {
-    //  //vgaPushInpStm <-/< myFbCtrlResetArea.myFbCtrl.io.pop
-    //}
+    }
+    when (rMyDbgResetState) {
+      vgaPushInpStm.valid := rMyDbgResetState
+      vgaPushInpStm.payload.r := 0x1f
+      vgaPushInpStm.payload.g := 0x1f
+      vgaPushInpStm.payload.b := 0x1f
+    } otherwise {
+      //vgaPushInpStm <-/< myFbCtrlResetArea.myFbCtrl.io.pop
+    }
 
   }
   //--------
   val fbInitArea =
-    new Area
-    //new ResetArea(
-    //  myTempFbInitSoftReset,
-    //  cumulative=true
-    //)
+    //new Area
+    new ResetArea(
+      //myTempFbInitSoftReset,
+      rMyDbgResetState,
+      cumulative=(
+        //true
+        false
+      )
+    )
   {
     def myFbArbFbInitHost = fbAndDcacheArea.myFbArbFbInitHost
     val vgaTimingInfo = cfg.vgaTimingInfo
@@ -8803,6 +8808,12 @@ case class MeltedMoonSimDut(
       }
     )
     val myPrng = LcvXorShift16(cfg=myPrngCfg)
+    meltedMoon.io.joystick(0)(
+      meltedMoon.io.joystick(0).high downto 1
+    ) := 0x0
+    meltedMoon.io.joystick(0).lsb := (
+      RegNext(False, init=True)
+    )
 
 
     meltedMoon.io.ddram.busy := (
