@@ -1551,8 +1551,9 @@ case class MeltedMoonLcvBusToDdramBridge(
         rWrState := WR_STATE_FINISH_LCV_D2H
       }
       wrMem.io.ramIo.rdEn := (
-        io.ddram.we
-        && !io.ddram.busy
+        //io.ddram.we
+        //&& 
+        !io.ddram.busy
         && !rWrDdramBurstCnt.fire
       )
     }
