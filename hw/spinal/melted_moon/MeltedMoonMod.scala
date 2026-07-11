@@ -1431,10 +1431,10 @@ case class MeltedMoonLcvBusToDdramBridge(
   )
   switch (rWrLcvBurstCnt.lsb) {
     is (False) {
-      wrMem.io.ramIo.wrData(63 downto 32) := io.lcvBus.h2dBus.data
+      wrMem.io.ramIo.wrData(31 downto 0) := io.lcvBus.h2dBus.data
     }
     is (True) {
-      wrMem.io.ramIo.wrData(31 downto 0) := io.lcvBus.h2dBus.data
+      wrMem.io.ramIo.wrData(63 downto 32) := io.lcvBus.h2dBus.data
     }
   }
   when (wrMem.io.ramIo.wrEn) {
@@ -3609,24 +3609,24 @@ case class MeltedMoonFbDdram(
   //  rMyCpuResetState := False
   //}
   val cpuArea =
-    new Area
-    //new ResetArea(
-    //  //myCpuAreaSoftReset,
-    //  ////mkMyCpuAreaSoftReset(0),
-    //  History[Bool](
-    //    that=rMyCpuResetState,
-    //    length=7,
-    //    init=True,
-    //  ).last,
-    //  //fell(rMyCpuResetState),
-    //  cumulative=(
-    //    if (!cfg.dbgUseLcvBusMem) (
-    //      false//true//false//true//false//true
-    //    ) else (
-    //      true
-    //    )
-    //  )
-    //)
+    //new Area
+    new ResetArea(
+      //myCpuAreaSoftReset,
+      ////mkMyCpuAreaSoftReset(0),
+      History[Bool](
+        that=rMyCpuResetState,
+        length=7,
+        init=True,
+      ).last,
+      //fell(rMyCpuResetState),
+      cumulative=(
+        if (!cfg.dbgUseLcvBusMem) (
+          false//true//false//true//false//true
+        ) else (
+          true
+        )
+      )
+    )
     //new ResetArea(
     //  //myCpuAreaSoftReset,
     //  ////mkMyCpuAreaSoftReset(0),
@@ -3647,29 +3647,29 @@ case class MeltedMoonFbDdram(
   {
     //--------
     val myCpuInnerArea =
-      //new Area
+      new Area
       //new ResetArea(
       //  //myCpuAreaSoftReset,
       //  mkMyCpuAreaSoftReset(0),
       //  cumulative=true//false//true
       //)
-      new ResetArea(
-        //myCpuAreaSoftReset,
-        ////mkMyCpuAreaSoftReset(0),
-        History[Bool](
-          that=rMyCpuResetState,
-          length=7,
-          init=True,
-        ).last,
-        //fell(rMyCpuResetState),
-        cumulative=(
-          if (!cfg.dbgUseLcvBusMem) (
-            false//true//false//true//false//true
-          ) else (
-            true
-          )
-        )
-      )
+      //new ResetArea(
+      //  //myCpuAreaSoftReset,
+      //  ////mkMyCpuAreaSoftReset(0),
+      //  History[Bool](
+      //    that=rMyCpuResetState,
+      //    length=7,
+      //    init=True,
+      //  ).last,
+      //  //fell(rMyCpuResetState),
+      //  cumulative=(
+      //    if (!cfg.dbgUseLcvBusMem) (
+      //      false//true//false//true//false//true
+      //    ) else (
+      //      true
+      //    )
+      //  )
+      //)
     {
       val cpu = (
         //SnowHouseCpuWithoutRam(program=cfg.testProgram.program)
@@ -4195,8 +4195,8 @@ case class MeltedMoonFbDdram(
   )
   if (!cfg.dbgUseLcvBusMem) {
     when (
-      //fell(io.ioctl.download)
-      io.ioctl.download
+      fell(io.ioctl.download)
+      //io.ioctl.download
     ) {
       rSeenIoctlDownloadEtc := True
     }
@@ -5639,13 +5639,13 @@ case class MeltedMoon(
   val rMyDbgResetState = (
     Reg(Bool(), init=True)
   )
-  if (io.ddram != null) {
-    when (
-      rose(io.joystick(0)(0))
-    ) {
-      rMyDbgResetState := True
-    }
-  }
+  //if (io.ddram != null) {
+  //  when (
+  //    rose(io.joystick(0)(0))
+  //  ) {
+  //    rMyDbgResetState := True
+  //  }
+  //}
   when (
     //fell(io.ioctl.download)
     if (
