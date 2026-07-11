@@ -1541,6 +1541,7 @@ case class MeltedMoonLcvBusToDdramBridge(
       io.ddram.addr(myDdramAddrRange) := (
         rSavedLcvH2dPayload.addr(myLcvAddrRange)
       )
+      io.ddram.din := wrMem.io.ramIo.rdData
       when (
         io.ddram.we
         && !io.ddram.busy
