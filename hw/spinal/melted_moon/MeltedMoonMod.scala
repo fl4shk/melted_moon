@@ -255,8 +255,8 @@ case class MeltedMoonConfig(
     icacheDepthWords=(
       //8192  // numWays * (32 kiB) icache
       //4096  // numWays * (16 kiB) icache
-      //2048 // numWays * (8 kiB) icache
-      1024 // numWays * (4 kiB) icache
+      2048 // numWays * (8 kiB) icache
+      //1024 // numWays * (4 kiB) icache
     ),
     icacheNumWays=(
       //2
@@ -268,14 +268,14 @@ case class MeltedMoonConfig(
     ),
     dcacheDepthWords=(
       //8192 // numWays * (32 kiB) dcache
-      //4096 // numWays * (16 kiB) dcache
+      4096 // numWays * (16 kiB) dcache
       //2048 // numWays * (8 kiB) dcache
-      1024 // numWays * (4 kiB) dcache
+      //1024 // numWays * (4 kiB) dcache
     ),
     dcacheNumWays=(
       //2
-      2
-      //4
+      //2
+      4
       //8
       //3
     ),
@@ -1232,6 +1232,10 @@ case class MeltedMoonLcvBusToDdramBridge(
   def lcvBusCfg = io.lcvBus.cfg
 
   io.lcvBus.h2dBus.ready := False
+  //io.lcvBus.d2hBus.valid.setAsReg() init(False)
+  //io.lcvBus.d2hBus.payload.setAsReg()
+  //  .init(io.lcvBus.d2hBus.payload.getZero)
+
   io.lcvBus.d2hBus.valid := False
   io.lcvBus.d2hBus.payload := io.lcvBus.d2hBus.payload.getZero
 
@@ -1250,24 +1254,24 @@ case class MeltedMoonLcvBusToDdramBridge(
   val myDdramBurstCnt = (
     1 << (lcvBusCfg.burstCntWidth - 1)
   )
-  val myFifoLatency = (
-    //1
-    0
-  )
-  val myFifoDepth = (
-    if (myFifoLatency == 2) (
-      // depth needs to be one *less* when `withAsyncRead==false`
-      myDdramBurstCnt - 1
-    ) else (
-      myDdramBurstCnt
-    )
-  )
-  println(
-    s"debug: "
-    + s"myDdramBurstCnt:${myDdramBurstCnt} "
-    + s"myFifoDepth:${myFifoDepth} "
-    + s"myFifoLatency:${myFifoLatency}"
-  )
+  //val myFifoLatency = (
+  //  //1
+  //  0
+  //)
+  //val myFifoDepth = (
+  //  if (myFifoLatency == 2) (
+  //    // depth needs to be one *less* when `withAsyncRead==false`
+  //    myDdramBurstCnt - 1
+  //  ) else (
+  //    myDdramBurstCnt
+  //  )
+  //)
+  //println(
+  //  s"debug: "
+  //  + s"myDdramBurstCnt:${myDdramBurstCnt} "
+  //  + s"myFifoDepth:${myFifoDepth} "
+  //  + s"myFifoLatency:${myFifoLatency}"
+  //)
 
   io.ddram.burstCnt := (
     //myFifoDepth
@@ -1290,30 +1294,68 @@ case class MeltedMoonLcvBusToDdramBridge(
   }
 
 
-  val rdFifo = StreamFifo(
-    dataType=cloneOf(io.ddram.dout),
-    depth=myFifoDepth,
-    latency=myFifoLatency,
-    forFMax=true,
-  )
-  val wrFifo = StreamFifo(
-    dataType=cloneOf(io.ddram.dout),
-    depth=myFifoDepth,
-    latency=myFifoLatency,
-    forFMax=true,
-  )
+  //val rdFifo = StreamFifo(
+  //  dataType=cloneOf(io.ddram.dout),
+  //  depth=myFifoDepth,
+  //  latency=myFifoLatency,
+  //  forFMax=true,
+  //)
+  //val wrFifo = StreamFifo(
+  //  dataType=cloneOf(io.ddram.dout),
+  //  depth=myFifoDepth,
+  //  latency=myFifoLatency,
+  //  forFMax=true,
+  //)
 
-  //rdFifo.io.push.valid := False
-  //rdFifo.io.push.payload := rdFifo.io.push.payload.getZero
+  ////rdFifo.io.push.valid := False
+  ////rdFifo.io.push.payload := rdFifo.io.push.payload.getZero
+  ////rdFifo.io.pop.ready := False
+
+  //wrFifo.io.push.valid := False
+  //wrFifo.io.push.payload := wrFifo.io.push.payload.getZero
+  //wrFifo.io.pop.ready := False
+
+  ////rdFifo.io.push.valid := False//io.ddram.doutReady
+  ////rdFifo.io.push.payload := rdFifo.io.push.payload.getZero//io.ddram.dout
+
+  //rdFifo.io.push.valid := io.ddram.doutReady
+  //rdFifo.io.push.payload := io.ddram.dout
   //rdFifo.io.pop.ready := False
 
-  wrFifo.io.push.valid := False
-  wrFifo.io.push.payload := wrFifo.io.push.payload.getZero
-  wrFifo.io.pop.ready := False
+  def mkMemCfg(
+    doAsyncRead: Boolean
+  ) = RamSimpleDualPortConfig(
+    wordType=cloneOf(io.ddram.dout),
+    depth=myDdramBurstCnt,
+    arrRamStyleAltera="no_rw_check, MLAB",
+    doAsyncRead=doAsyncRead,
+  )
 
-  rdFifo.io.push.valid := False//io.ddram.doutReady
-  rdFifo.io.push.payload := rdFifo.io.push.payload.getZero//io.ddram.dout
-  rdFifo.io.pop.ready := False
+  val rdMem = RamSimpleDualPort(cfg=mkMemCfg(doAsyncRead=true))
+  val wrMem = RamSimpleDualPort(cfg=mkMemCfg(doAsyncRead=true))
+
+  //val rInRd = Reg(Bool(), init=False)
+  val rdStateWidth = 2//1//2 
+  def RD_STATE_IDLE = U(s"$rdStateWidth'b00")
+  //def RD_STATE_FINISH_LCV_H2D = U(s"$rdStateWidth'b01")
+  def RD_STATE_START_DDRAM_BURST = U(s"$rdStateWidth'b01")
+  def RD_STATE_LAST = U(s"$rdStateWidth'b10")
+
+  val rRdState = (
+    Reg(UInt(rdStateWidth bits))
+    init(0x0)
+  )
+
+  val wrStateWidth = 2 
+  def WR_STATE_IDLE = U(s"$wrStateWidth'b00")
+  def WR_STATE_LCV_BURST = U(s"$wrStateWidth'b01")
+  def WR_STATE_DDRAM_BURST = U(s"$wrStateWidth'b10")
+  def WR_STATE_FINISH_LCV_D2H = U(s"$wrStateWidth'b11")
+
+  val rWrState = (
+    Reg(UInt(wrStateWidth bits))
+    init(0x0)
+  )
 
 
   val rRdLcvBurstCnt = (
@@ -1324,198 +1366,477 @@ case class MeltedMoonLcvBusToDdramBridge(
     Reg(UInt(lcvBusCfg.burstCntWidth bits))
     init(lcvBusCfg.maxBurstSizeMinus1)
   )
-  val rWrDdramBurstCnt = (
-    Reg(UInt(log2Up(myDdramBurstCnt) bits))
-    init(myDdramBurstCnt - 1)
+
+  //val rInWr = Reg(Bool(), init=False)
+  val rRdDdramBurstCnt = {
+    val temp = Reg(Flow(UInt(log2Up(myDdramBurstCnt) bits)))
+    temp.valid.init(False)
+    temp.payload.init(myDdramBurstCnt - 1)
+    temp
+  }
+  val rWrDdramBurstCnt = {
+    val temp = Reg(Flow(UInt(log2Up(myDdramBurstCnt) bits)))
+    temp.valid.init(False)
+    temp.payload.init(myDdramBurstCnt - 1)
+    temp
+  }
+
+  rdMem.io.ramIo.rdEn := False
+  rdMem.io.ramIo.rdAddr := rRdLcvBurstCnt(rRdLcvBurstCnt.high downto 1)
+  when (rdMem.io.ramIo.rdEn) {
+    rRdLcvBurstCnt := rRdLcvBurstCnt - 1
+  }
+
+  //rdMem.io.ramIo.wrEn := (
+  //  rRdState.orR
+  //  && io.ddram.doutReady
+  //)
+  rdMem.io.ramIo.wrEn := False
+  rdMem.io.ramIo.wrAddr := rRdDdramBurstCnt.payload
+  rdMem.io.ramIo.wrData := io.ddram.dout
+  when (rdMem.io.ramIo.wrEn) {
+    rRdDdramBurstCnt.payload := rRdDdramBurstCnt.payload - 1
+  }
+  when (
+    rdMem.io.ramIo.wrEn
+    && !rRdDdramBurstCnt.payload.orR
+  ) {
+    rRdDdramBurstCnt.valid := True
+  }
+
+  //wrMem.io.ramIo.rdEn := False
+  //wrMem.io.ramIo.rdAddr := 0x0
+
+  //wrMem.io.ramIo.wrEn := False
+  //wrMem.io.ramIo.wrAddr := 0x0
+  //wrMem.io.ramIo.wrData := 0x0
+  wrMem.io.ramIo.rdEn := False
+  wrMem.io.ramIo.rdAddr := rWrDdramBurstCnt.payload
+  when (
+    wrMem.io.ramIo.rdEn
+  ) {
+    rWrDdramBurstCnt.payload := rWrDdramBurstCnt.payload - 1
+  }
+  when (
+    wrMem.io.ramIo.rdEn
+    && !rWrDdramBurstCnt.payload.orR
+  ) {
+    rWrDdramBurstCnt.valid := True
+  }
+
+  wrMem.io.ramIo.wrEn := False
+  wrMem.io.ramIo.wrAddr := rWrLcvBurstCnt(rWrLcvBurstCnt.high downto 1)
+  wrMem.io.ramIo.wrData := (
+    RegNext(wrMem.io.ramIo.wrData)
   )
-
-  val stateWidth = 3
-  def STATE_IDLE = U(s"${stateWidth}'b000")
-  def STATE_RD_BURST_START = U(s"${stateWidth}'b001")
-  def STATE_RD_BURST_PUSH_FIFO = U(s"${stateWidth}'b010")
-  def STATE_RD_BURST_POP_FIFO = U(s"${stateWidth}'b011")
-  def STATE_WR_BURST_PUSH_FIFO = U(s"${stateWidth}'b100")
-  def STATE_WR_BURST_POP_FIFO = U(s"${stateWidth}'b101")
-  def STATE_WR_BURST_LCV_D2H_RESP = U(s"${stateWidth}'b110")
-
-  val rState = Reg(UInt(stateWidth bits), init=STATE_IDLE)
-
-  io.ddram.rd := False
-  io.ddram.we := False
+  switch (rWrLcvBurstCnt.lsb) {
+    is (False) {
+      wrMem.io.ramIo.wrData(63 downto 32) := io.lcvBus.h2dBus.data
+    }
+    is (True) {
+      wrMem.io.ramIo.wrData(31 downto 0) := io.lcvBus.h2dBus.data
+    }
+  }
+  when (wrMem.io.ramIo.wrEn) {
+    rWrLcvBurstCnt := rWrLcvBurstCnt - 1
+  }
 
   io.lcvBus.d2hBus.src.allowOverride
   io.lcvBus.d2hBus.src := rSavedLcvH2dPayload.src
 
-  val rDidFirstDdramRd = Reg(Bool(), init=False)
+  io.ddram.rd := False
+  io.ddram.we := False
 
-  switch (rState) {
-    is (STATE_IDLE) {
+  switch (
+    (io.lcvBus.h2dBus.valid && !rRdState.orR && !rWrState.orR)
+    ## io.lcvBus.h2dBus.isWrite
+  ) {
+    is (B"10") {
       rSavedLcvH2dPayload := io.lcvBus.h2dBus.payload
-      switch (
-        io.lcvBus.h2dBus.valid
-        ## io.lcvBus.h2dBus.isWrite
-      ) {
-        is (B"10") {
-          rState := STATE_RD_BURST_START
-        }
-        is (B"11") {
-          rState := STATE_WR_BURST_PUSH_FIFO
-        }
-        default {
-        }
-      }
+      //rRdState := RD_STATE_FINISH_LCV_H2D
+      io.lcvBus.h2dBus.ready := True
+      rRdState := RD_STATE_START_DDRAM_BURST
     }
-    is (STATE_RD_BURST_START) {
-      when (
-        rose(rState === STATE_RD_BURST_START)
-      ) {
-        io.lcvBus.h2dBus.ready := True
-        io.ddram.rd := True
-      }
-      //io.ddram.rd := True
+    is (B"11") {
+      rSavedLcvH2dPayload := io.lcvBus.h2dBus.payload
+      rWrState := WR_STATE_LCV_BURST
+    }
+    default {
+    }
+  }
+
+  switch (rRdState) {
+    //is (RD_STATE_IDLE) {
+    //}
+    //is (RD_STATE_FINISH_LCV_H2D) {
+    //  io.lcvBus.h2dBus.ready := True
+    //  when (io.lcvBus.h2dBus.fire) {
+    //    rRdState := RD_STATE_BURST
+    //  }
+    //}
+    is (RD_STATE_START_DDRAM_BURST) {
+      rdMem.io.ramIo.wrEn := (
+        //rRdState.orR
+        //&& 
+        io.ddram.doutReady
+        && !rRdDdramBurstCnt.fire
+      )
+      io.ddram.rd := True
       io.ddram.addr(myDdramAddrRange) := (
         rSavedLcvH2dPayload.addr(myLcvAddrRange)
       )
-      when (
-        io.ddram.rd
-        && !io.ddram.busy
-        && !rDidFirstDdramRd
-        //&& rdFifo.io.occupancy === myDdramBurstCnt - 1
-        //&& rdFifo.io.push.fire
-      ) {
+      when (io.ddram.rd && !io.ddram.busy) {
         io.ddram.rd := False
-        rDidFirstDdramRd := True
-        //rState := STATE_RD_BURST_PUSH_FIFO
-      }
-      rdFifo.io.push.valid := io.ddram.doutReady
-      rdFifo.io.push.payload := io.ddram.dout
-      when (rdFifo.io.push.fire) {
-        rState := STATE_RD_BURST_PUSH_FIFO
+        rRdState := RD_STATE_LAST
       }
     }
-    is (STATE_RD_BURST_PUSH_FIFO) {
-      rDidFirstDdramRd := False
-      when (!rdFifo.io.availability.orR) {
-        rState := STATE_RD_BURST_POP_FIFO
-      }
-      rdFifo.io.push.valid := io.ddram.doutReady
-      rdFifo.io.push.payload := io.ddram.dout
-    }
-    is (STATE_RD_BURST_POP_FIFO) {
-      io.lcvBus.d2hBus.burstFirst := (
-        rRdLcvBurstCnt === lcvBusCfg.maxBurstSizeMinus1
+    is (RD_STATE_LAST) {
+      rdMem.io.ramIo.wrEn := (
+        //rRdState.orR
+        //&& 
+        io.ddram.doutReady
+        && !rRdDdramBurstCnt.fire
       )
-      io.lcvBus.d2hBus.burstLast := (
-        !rRdLcvBurstCnt.orR
-      )
-      io.lcvBus.d2hBus.burstCnt := rRdLcvBurstCnt
+      io.lcvBus.d2hBus.valid := rRdDdramBurstCnt.fire
+      rdMem.io.ramIo.rdEn := io.lcvBus.d2hBus.fire
 
-      //val (myRdReptStm, myRdReptCnt) = (
-      //  // we only want to duplicate *once*, so we use `.repeat(2)`
-      //  rdFifo.io.pop.repeat(2)
-      //)
-      val myRdPopStm = cloneOf(rdFifo.io.pop)
-      myRdPopStm.valid := rdFifo.io.pop.valid //True
-      myRdPopStm.payload := rdFifo.io.pop.payload
-
-      myRdPopStm.translateInto(
-        io.lcvBus.d2hBus
-      )(
-        dataAssignment=(outp, inp) => {
-          //outp.src := rSavedLcvH2dPayload.src
-          switch (
-            //myRdReptCnt
-            rRdLcvBurstCnt.lsb
-          ) {
-            is (False) {
-              outp.data := inp(31 downto 0)
-            }
-            is (True) {
-              outp.data := inp(63 downto 32)
-            }
-          }
+      switch (rRdLcvBurstCnt.lsb) {
+        is (False) {
+          io.lcvBus.d2hBus.data := rdMem.io.ramIo.rdData(31 downto 0)
         }
-      )
+        is (True) {
+          io.lcvBus.d2hBus.data := rdMem.io.ramIo.rdData(63 downto 32)
+        }
+      }
+
+      io.lcvBus.d2hBus.burstFirst := rRdLcvBurstCnt.andR
+      io.lcvBus.d2hBus.burstLast := !rRdLcvBurstCnt.orR
+      io.lcvBus.d2hBus.burstCnt := rSavedLcvH2dPayload.burstCnt
       when (
         io.lcvBus.d2hBus.fire
-        && !rRdLcvBurstCnt.lsb
+        && io.lcvBus.d2hBus.burstLast
       ) {
-        rdFifo.io.pop.ready := True
-      }
-      when (io.lcvBus.d2hBus.fire) {
-        rRdLcvBurstCnt := rRdLcvBurstCnt - 1
-      }
-      when (
-        io.lcvBus.d2hBus.fire 
-        && !rRdLcvBurstCnt.orR
-      ) {
-        rState := STATE_IDLE
+        rRdDdramBurstCnt.valid := False
+        rRdState := RD_STATE_IDLE
       }
     }
-    is (STATE_WR_BURST_PUSH_FIFO) {
+    default {
+    }
+  }
+
+  switch (rWrState) {
+    is (WR_STATE_LCV_BURST) {
       io.lcvBus.h2dBus.ready := True
-
-      wrFifo.io.push.payload := (
-        RegNext(
-          wrFifo.io.push.payload,
-          init=wrFifo.io.push.payload.getZero
-        )
-      )
-      when (io.lcvBus.h2dBus.fire) {
-        rWrLcvBurstCnt := rWrLcvBurstCnt - 1
-      }
-      when (rWrLcvBurstCnt.lsb) {
-        wrFifo.io.push.payload(63 downto 32) := io.lcvBus.h2dBus.data
-      } otherwise {
-        wrFifo.io.push.payload(31 downto 0) := io.lcvBus.h2dBus.data
-      }
-
-      when (fell(rWrLcvBurstCnt.lsb)) {
-        wrFifo.io.push.valid := True
-      }
+      wrMem.io.ramIo.wrEn := io.lcvBus.h2dBus.fire
+      //wrMem.io.ramIo.wrAddr := 
       when (
         io.lcvBus.h2dBus.fire
-        && !rWrLcvBurstCnt.orR
+        && io.lcvBus.h2dBus.burstLast
       ) {
-        rState := STATE_WR_BURST_POP_FIFO
+        rWrState := WR_STATE_DDRAM_BURST
       }
     }
-    is (STATE_WR_BURST_POP_FIFO) {
+    is (WR_STATE_DDRAM_BURST) {
       io.ddram.we := True
       io.ddram.addr(myDdramAddrRange) := (
         rSavedLcvH2dPayload.addr(myLcvAddrRange)
       )
-      when (wrFifo.io.pop.fire) {
-        rWrDdramBurstCnt := rWrDdramBurstCnt - 1
-      }
       when (
-        //io.ddram.we && !io.ddram.busy
-        ////&& !wrFifo.io.occupancy.orR
-        ////&& wrFifo.io.occupancy === 1
-        ////////&& RegNext(wrFifo.io.pop.fire)
-        //&& 
-        wrFifo.io.pop.fire
-        && !rWrDdramBurstCnt.orR
-        //&& !wrFifo.io.pop.valid
+        io.ddram.we
+        && !io.ddram.busy
+        && rWrDdramBurstCnt.fire
       ) {
         io.ddram.we := False
-        rState := STATE_WR_BURST_LCV_D2H_RESP
+        rWrState := WR_STATE_FINISH_LCV_D2H
       }
-      io.ddram.din := wrFifo.io.pop.payload
-      wrFifo.io.pop.ready := (
-        io.ddram.we && !io.ddram.busy
+      wrMem.io.ramIo.rdEn := (
+        io.ddram.we
+        && !io.ddram.busy
+        && !rWrDdramBurstCnt.fire
       )
     }
-    is (STATE_WR_BURST_LCV_D2H_RESP) {
+    is (WR_STATE_FINISH_LCV_D2H) {
       io.lcvBus.d2hBus.valid := True
       io.lcvBus.d2hBus.burstFirst := True
       io.lcvBus.d2hBus.burstLast := True
-
+      io.lcvBus.d2hBus.burstCnt := rSavedLcvH2dPayload.burstCnt
       when (io.lcvBus.d2hBus.ready) {
-        rState := STATE_IDLE
+        rWrState := WR_STATE_IDLE
       }
     }
+    default {
+    }
   }
+
+
+
+  //when (rose(rInRd)) {
+  //  io.lcvBus.h2dBus.ready := True
+  //}
+
+  //when (rInRd) {
+  //  io.ddram.rd :=
+  //}
+
+  //when (rInWr) {
+  //}
+
+  //when (io.lcvBus.h2dBus.fire && io.lcvBus.h2dBus.burstFirst) {
+  //  rSavedH2d
+  //}
+
+  //val stateWidth = 3
+  //def STATE_IDLE = U(s"${stateWidth}'b000")
+  //def STATE_RD_BURST = U(s"${stateWidth}'b001")
+  //def STATE_WR_BURST_PUSH_FIFO = U(s"${stateWidth}'b010")
+  //def STATE_WR_BURST_POP_FIFO = U(s"${stateWidth}'b011")
+  //def STATE_WR_BURST_FINISH_LCV_D2H = U(s"${stateWidth}'b100")
+
+  //val rState = Reg(UInt(stateWidth bits), init=STATE_IDLE)
+  //switch (rState) {
+  //  is (STATE_IDLE) {
+  //    rSavedLcvH2dPayload := io.lcvBus.h2dBus.payload
+  //    switch (
+  //      io.lcvBus.h2dBus.valid
+  //      ## io.lcvBus.h2dBus.isWrite
+  //    ) {
+  //      is (B"10") {
+  //        rState := STATE_RD_BURST
+  //      }
+  //      is (B"11") {
+  //        rState := STATE_WR_BURST_PUSH_FIFO
+  //      }
+  //      default {
+  //      }
+  //    }
+  //  }
+  //}
+
+  //val stateWidth = 3
+  //def STATE_IDLE = U(s"${stateWidth}'b000")
+  //def STATE_RD_BURST_START = U(s"${stateWidth}'b001")
+  //def STATE_RD_BURST_PUSH_FIFO = U(s"${stateWidth}'b010")
+  //def STATE_RD_BURST_POP_FIFO = U(s"${stateWidth}'b011")
+  //def STATE_WR_BURST_PUSH_FIFO = U(s"${stateWidth}'b100")
+  //def STATE_WR_BURST_POP_FIFO = U(s"${stateWidth}'b101")
+  //def STATE_WR_BURST_LCV_D2H_RESP = U(s"${stateWidth}'b110")
+
+  //val rState = Reg(UInt(stateWidth bits), init=STATE_IDLE)
+
+  //io.ddram.rd := False
+  //io.ddram.we := False
+
+
+  //val rDidDdramRd = Vec.fill(2)(
+  //  Reg(Bool(), init=False)
+  //)
+  //val rDidDdramWe = Vec.fill(2)(
+  //  Reg(Bool(), init=False)
+  //)
+  //val rDdramRd = Reg(Bool(), init=False)
+
+  //rdFifo.io.push.valid := io.ddram.doutReady
+  //rdFifo.io.push.payload := io.ddram.dout
+
+  //switch (rState) {
+  //  is (STATE_IDLE) {
+  //    rSavedLcvH2dPayload := io.lcvBus.h2dBus.payload
+  //    switch (
+  //      io.lcvBus.h2dBus.valid
+  //      ## io.lcvBus.h2dBus.isWrite
+  //    ) {
+  //      is (B"10") {
+  //        rState := STATE_RD_BURST_START
+  //      }
+  //      is (B"11") {
+  //        rState := STATE_WR_BURST_PUSH_FIFO
+  //      }
+  //      default {
+  //      }
+  //    }
+  //  }
+  //  is (STATE_RD_BURST_START) {
+  //    when (
+  //      //rose(rState === STATE_RD_BURST_START)
+  //      !rDidDdramRd(0)
+  //      && !io.ddram.busy
+  //    ) {
+  //      io.lcvBus.h2dBus.ready := True
+  //      io.ddram.rd := True
+  //      rDidDdramRd(0) := True
+  //      io.ddram.addr(myDdramAddrRange) := (
+  //        rSavedLcvH2dPayload.addr(myLcvAddrRange)
+  //      )
+  //    }
+  //    //io.ddram.rd := True
+  //    when (
+  //      io.ddram.rd
+  //      && !io.ddram.busy
+  //      //&& !rDidDdramRd(1)
+  //      //&& rdFifo.io.occupancy === myDdramBurstCnt - 1
+  //      //&& rdFifo.io.push.fire
+  //    ) {
+  //      io.ddram.rd := False
+  //      rDidDdramRd(1) := True
+  //      //rState := STATE_RD_BURST_PUSH_FIFO
+  //    }
+  //    //rdFifo.io.push.valid := io.ddram.doutReady
+  //    //rdFifo.io.push.payload := io.ddram.dout
+  //    //when (
+  //    //  rdFifo.io.push.fire
+  //    //  && !rDidDdramRd(2)
+  //    //) {
+  //    //  rDidDdramRd(2) := True
+  //    //  //rState := STATE_RD_BURST_PUSH_FIFO
+  //    //}
+  //    when (
+  //      rDidDdramRd.andR
+  //    ) {
+  //      rState := STATE_RD_BURST_PUSH_FIFO
+  //    }
+  //  }
+  //  is (STATE_RD_BURST_PUSH_FIFO) {
+  //    rDidDdramRd.foreach(item => item := False)
+  //    when (
+  //      !rdFifo.io.availability.orR
+  //    ) {
+  //      rState := STATE_RD_BURST_POP_FIFO
+  //    }
+  //    //rdFifo.io.push.valid := io.ddram.doutReady
+  //    //rdFifo.io.push.payload := io.ddram.dout
+  //  }
+  //  is (STATE_RD_BURST_POP_FIFO) {
+  //    io.lcvBus.d2hBus.burstFirst := (
+  //      rRdLcvBurstCnt === lcvBusCfg.maxBurstSizeMinus1
+  //    )
+  //    io.lcvBus.d2hBus.burstLast := (
+  //      !rRdLcvBurstCnt.orR
+  //    )
+  //    io.lcvBus.d2hBus.burstCnt := rRdLcvBurstCnt
+
+  //    //val (myRdReptStm, myRdReptCnt) = (
+  //    //  // we only want to duplicate *once*, so we use `.repeat(2)`
+  //    //  rdFifo.io.pop.repeat(2)
+  //    //)
+
+  //    val myRdPopStm = cloneOf(rdFifo.io.pop)
+  //    myRdPopStm.valid := rdFifo.io.pop.valid //True
+  //    myRdPopStm.payload := rdFifo.io.pop.payload
+
+  //    myRdPopStm.translateInto(
+  //      io.lcvBus.d2hBus
+  //    )(
+  //      dataAssignment=(outp, inp) => {
+  //        //outp.src := rSavedLcvH2dPayload.src
+  //        switch (
+  //          //myRdReptCnt
+  //          rRdLcvBurstCnt.lsb
+  //        ) {
+  //          is (False) {
+  //            outp.data := inp(31 downto 0)
+  //          }
+  //          is (True) {
+  //            outp.data := inp(63 downto 32)
+  //          }
+  //        }
+  //      }
+  //    )
+  //    when (
+  //      io.lcvBus.d2hBus.fire
+  //      && !rRdLcvBurstCnt.lsb
+  //    ) {
+  //      rdFifo.io.pop.ready := True
+  //    }
+  //    when (io.lcvBus.d2hBus.fire) {
+  //      rRdLcvBurstCnt := rRdLcvBurstCnt - 1
+  //    }
+  //    when (
+  //      io.lcvBus.d2hBus.fire 
+  //      && !rRdLcvBurstCnt.orR
+  //    ) {
+  //      rState := STATE_IDLE
+  //    }
+  //  }
+  //  is (STATE_WR_BURST_PUSH_FIFO) {
+  //    io.lcvBus.h2dBus.ready := True
+
+  //    wrFifo.io.push.payload := (
+  //      RegNext(
+  //        wrFifo.io.push.payload,
+  //        init=wrFifo.io.push.payload.getZero
+  //      )
+  //    )
+  //    when (io.lcvBus.h2dBus.fire) {
+  //      rWrLcvBurstCnt := rWrLcvBurstCnt - 1
+  //    }
+  //    when (rWrLcvBurstCnt.lsb) {
+  //      wrFifo.io.push.payload(63 downto 32) := io.lcvBus.h2dBus.data
+  //    } otherwise {
+  //      wrFifo.io.push.payload(31 downto 0) := io.lcvBus.h2dBus.data
+  //    }
+
+  //    when (fell(rWrLcvBurstCnt.lsb)) {
+  //      wrFifo.io.push.valid := True
+  //    }
+  //    when (
+  //      io.lcvBus.h2dBus.fire
+  //      && !rWrLcvBurstCnt.orR
+  //    ) {
+  //      rState := STATE_WR_BURST_POP_FIFO
+  //    }
+  //  }
+  //  is (STATE_WR_BURST_POP_FIFO) {
+  //    //io.ddram.we := True
+  //    io.ddram.addr(myDdramAddrRange) := (
+  //      rSavedLcvH2dPayload.addr(myLcvAddrRange)
+  //    )
+  //    when (wrFifo.io.pop.fire) {
+  //      rWrDdramBurstCnt := rWrDdramBurstCnt - 1
+  //    }
+
+  //    wrFifo.io.pop.ready := (
+  //      //io.ddram.we && 
+  //      !io.ddram.busy
+  //    )
+  //    when (
+  //      !io.ddram.we
+  //      && !io.ddram.busy
+  //      && wrFifo.io.pop.fire
+  //    ) {
+  //      io.ddram.we := True
+  //    }
+  //    when (
+  //      //io.ddram.we && !io.ddram.busy
+  //      ////&& !wrFifo.io.occupancy.orR
+  //      ////&& wrFifo.io.occupancy === 1
+  //      ////////&& RegNext(wrFifo.io.pop.fire)
+  //      //&& 
+  //      RegNext(
+  //        (
+  //          wrFifo.io.pop.fire
+  //          && !rWrDdramBurstCnt.orR
+  //        ),
+  //        init=False
+  //      )
+  //      //&& !wrFifo.io.pop.valid
+  //    ) {
+  //      io.ddram.we := False
+  //      rState := STATE_WR_BURST_LCV_D2H_RESP
+  //    }
+  //    when (wrFifo.io.pop.fire) {
+  //      io.ddram.din := wrFifo.io.pop.payload
+  //    }
+  //  }
+  //  is (STATE_WR_BURST_LCV_D2H_RESP) {
+  //    io.lcvBus.d2hBus.valid := True
+  //    io.lcvBus.d2hBus.burstFirst := True
+  //    io.lcvBus.d2hBus.burstLast := True
+
+  //    when (io.lcvBus.d2hBus.ready) {
+  //      rState := STATE_IDLE
+  //    }
+  //  }
+  //}
 
   //val stateWidth = 3
   //def STATE_IDLE = U(s"${stateWidth}'b000")
@@ -2626,21 +2947,21 @@ case class MeltedMoonFbDdram(
   //  popClock=vgaClkDomain,
   //)
 
-  val rMyDbgResetState = (
-    Reg(Bool(), init=True)
-  )
-  when (
-    //fell(io.ioctl.download)
-    if (
-      io.ddram != null
-    ) (
-      fell(io.joystick(0)(0))
-    ) else (
-      True
-    )
-  ) {
-    rMyDbgResetState := False
-  }
+  //val rMyDbgResetState = (
+  //  Reg(Bool(), init=True)
+  //)
+  //when (
+  //  //fell(io.ioctl.download)
+  //  if (
+  //    io.ddram != null
+  //  ) (
+  //    fell(io.joystick(0)(0))
+  //  ) else (
+  //    True
+  //  )
+  //) {
+  //  rMyDbgResetState := False
+  //}
 
   val rMyCpuResetState = (
     Reg(Bool(),
@@ -3035,23 +3356,20 @@ case class MeltedMoonFbDdram(
       val myLcvBusToDdramBridge = MeltedMoonLcvBusToDdramBridge(cfg=cfg)
       io.ddram <> myLcvBusToDdramBridge.io.ddram
 
-      val myDdramResetArea =
-      new ResetArea(
-        reset=(
-          //fell(
-          //  io.joystick(0)(0)
-          //)
-          rMyDbgResetState
-        ),
-        cumulative=(
-          false
-        )
-      ) {
+      //val myDdramResetArea =
+      //new ResetArea(
+      //  reset=(
+      //    rMyDbgResetState
+      //  ),
+      //  cumulative=(
+      //    false
+      //  )
+      //) {
         myLcvBusToDdramBridge.io.lcvBus <-/< (
           myFbDcache.io.hiBus
           //arbiter.io.dev
         )
-      }
+      //}
 
       //--------
 
@@ -3102,43 +3420,43 @@ case class MeltedMoonFbDdram(
 
     //vgaArea.vgaCtrl.io.pixels <-/< myFbCtrl.io.pop
 
-    val myFbCtrlResetArea = 
-    new ResetArea(
-      reset=(
-        //fell(
-        //  io.joystick(0)(0)
-        //)
-        rMyDbgResetState
-      ),
-      cumulative=(
-        false
-      )
-    ) {
+    //val myFbCtrlResetArea = 
+    //new ResetArea(
+    //  reset=(
+    //    //fell(
+    //    //  io.joystick(0)(0)
+    //    //)
+    //    rMyDbgResetState
+    //  ),
+    //  cumulative=(
+    //    false
+    //  )
+    //) {
       val myFbCtrl = LcvBusFramebufferCtrl(cfg=cfg.myFbCfg)
       vgaPushInpStm <-/< myFbCtrl.io.pop
       myFbArbFbCtrlHost <-/< myFbCtrl.io.bus
-    }
-    when (rMyDbgResetState) {
-      vgaPushInpStm.valid := rMyDbgResetState
-      vgaPushInpStm.payload.r := 0x1f
-      vgaPushInpStm.payload.g := 0x1f
-      vgaPushInpStm.payload.b := 0x1f
-    } otherwise {
-      //vgaPushInpStm <-/< myFbCtrlResetArea.myFbCtrl.io.pop
-    }
+    //}
+    //when (rMyDbgResetState) {
+    //  vgaPushInpStm.valid := rMyDbgResetState
+    //  vgaPushInpStm.payload.r := 0x1f
+    //  vgaPushInpStm.payload.g := 0x1f
+    //  vgaPushInpStm.payload.b := 0x1f
+    //} otherwise {
+    //  //vgaPushInpStm <-/< myFbCtrlResetArea.myFbCtrl.io.pop
+    //}
 
   }
   //--------
   val fbInitArea =
-    //new Area
-    new ResetArea(
-      //myTempFbInitSoftReset,
-      rMyDbgResetState,
-      cumulative=(
-        //true
-        false
-      )
-    )
+    new Area
+    //new ResetArea(
+    //  //myTempFbInitSoftReset,
+    //  rMyDbgResetState,
+    //  cumulative=(
+    //    //true
+    //    false
+    //  )
+    //)
   {
     def myFbArbFbInitHost = fbAndDcacheArea.myFbArbFbInitHost
     val vgaTimingInfo = cfg.vgaTimingInfo
@@ -5314,18 +5632,48 @@ case class MeltedMoon(
 ) extends Component {
   val io = MeltedMoonIo(cfg=cfg)
   noIoPrefix()
-  val mySimArea = (
-    cfg.inSim
-  ) generate (new Area {
-    val meltedMoon = MeltedMoonForSim(cfg=cfg)
-    io <> meltedMoon.io
-  })
-  val myFbDdramArea = (
-    !cfg.inSim
-  ) generate (new Area {
-    val meltedMoon = MeltedMoonFbDdram(cfg=cfg)
-    io <> meltedMoon.io
-  })
+
+  val rMyDbgResetState = (
+    Reg(Bool(), init=True)
+  )
+  if (io.ddram != null) {
+    when (
+      rose(io.joystick(0)(0))
+    ) {
+      rMyDbgResetState := True
+    }
+  }
+  when (
+    //fell(io.ioctl.download)
+    if (
+      io.ddram != null
+    ) (
+      fell(io.joystick(0)(0))
+    ) else (
+      True
+    )
+  ) {
+    rMyDbgResetState := False
+  }
+
+  val myRstArea =
+  new ResetArea(
+    reset=rMyDbgResetState,
+    cumulative=false
+  ) {
+    val mySimArea = (
+      cfg.inSim
+    ) generate (new Area {
+      val meltedMoon = MeltedMoonForSim(cfg=cfg)
+      io <> meltedMoon.io
+    })
+    val myFbDdramArea = (
+      !cfg.inSim
+    ) generate (new Area {
+      val meltedMoon = MeltedMoonFbDdram(cfg=cfg)
+      io <> meltedMoon.io
+    })
+  }
 }
 
 
@@ -8817,7 +9165,7 @@ case class MeltedMoonSimDut(
 
 
     meltedMoon.io.ddram.busy := (
-      !(myPrng.io.outpXs.head % 10).orR
+      !(myPrng.io.outpXs.head % 5).orR
     )
 
     //val myFakeDdram = Mem(
