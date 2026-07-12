@@ -935,7 +935,7 @@ int main(int argc, char** argv) {
             //false
 
             true
-            //my_reg_pc == 0x1c68u//0x3e774u //0x3f694u//0x40580 //0x3fd08u//0x400b4u
+            //my_reg_pc == 0x3e794u //0x1c68u//0x3e774u //0x3f694u//0x40580 //0x3fd08u//0x400b4u
             //my_reg_pc == 0x1104ul //0x10bcul //0xeacul//0xd24ul
             ////stuck_animation_cnt == 5ul
             //my_dbus_addr >= 0x16a6580ul//0x16a6584ul//0x16a6580ul // 0x16a6584ul
@@ -1039,7 +1039,11 @@ int main(int argc, char** argv) {
     //--------
     // BEGIN: CPU debugging stuff
     #ifdef RISCV_CPU_DEBUG
-    MeltedMoonDebugRiscvEmu emu("melted_moon_doom-riscv32-timedemo_3.bin");
+    MeltedMoonDebugRiscvEmu emu(
+        //"melted_moon_doom-riscv32-timedemo_3.bin"
+        "melted_moon_doom-riscv32-no_timedemo.bin"
+        //"melted_moon_doom-riscv32-debug.bin"
+    );
 
     size_t update_tp_cnt = 0u;
     struct timeval tp;
@@ -1050,10 +1054,10 @@ int main(int argc, char** argv) {
     // END: CPU debugging stuff
     //--------
 
-    static constexpr u32 ADDR_TIMER_USEC_LO = u32(0x6000000ul);
-    static constexpr u32 ADDR_TIMER_USEC_HI = u32(0x6000004ul);
-    static constexpr u32 ADDR_TIMER_SEC_LO = u32(0x6000008ul);
-    static constexpr u32 ADDR_TIMER_SEC_HI = u32(0x600000cul);
+    static constexpr u32 ADDR_TIMER_USEC_LO = u32(0x86000000ul);
+    static constexpr u32 ADDR_TIMER_USEC_HI = u32(0x86000004ul);
+    static constexpr u32 ADDR_TIMER_SEC_LO = u32(0x86000008ul);
+    static constexpr u32 ADDR_TIMER_SEC_HI = u32(0x8600000cul);
     auto my_check_instr_name = [&dasm_str](
         const std::string& to_cmp
     ) -> bool {
