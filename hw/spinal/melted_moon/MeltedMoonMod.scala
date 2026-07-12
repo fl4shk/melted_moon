@@ -1394,6 +1394,9 @@ case class MeltedMoonLcvBusToDdramBridge(
   //}
   rdMem.io.rdAddrPipe.valid := False
   rdMem.io.rdAddrPipe.payload := rdMem.io.rdAddrPipe.payload.getZero
+  rdMem.io.rdAddrPipe.data.addr.allowOverride
+  rdMem.io.rdAddrPipe.data.addr := rRdLcvBurstCnt.payload
+
   rdMem.io.rdAddrPipe.addr.allowOverride
   rdMem.io.rdAddrPipe.addr := (
     rRdLcvBurstCnt.payload(rRdLcvBurstCnt.payload.high downto 1)
