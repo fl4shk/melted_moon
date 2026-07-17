@@ -813,6 +813,7 @@ int main(int argc, char** argv) {
 
     size_t tick_cnt = 0;
     size_t profile_finish_cnt = 0;
+    bool started_profile = false;
     auto end_tick = [&]() -> void {
         ++tick_cnt;
         top->eval();
@@ -832,7 +833,9 @@ int main(int argc, char** argv) {
         top->clk = !top->clk;
         #ifdef RISCV_CPU_PROFILE
         if (!top->clk) {
-            ++profile_finish_cnt;
+            if (started_profile) {
+                ++profile_finish_cnt;
+            }
         }
         #endif      // RISCV_CPU_PROFILE
         //if ((tick_cnt % (2 * CLKS_PER_PIXEL)) == 0) {
@@ -928,7 +931,7 @@ int main(int argc, char** argv) {
             && (
                 dasm_str.size() < profile_dasm_dont_care_str.size()
                 || (
-                    dasm_str.substr(profile_dasm_dont_care_str.size())
+                    dasm_str.substr(0u, profile_dasm_dont_care_str.size())
                     != profile_dasm_dont_care_str
                 )
             )
@@ -1004,7 +1007,8 @@ int main(int argc, char** argv) {
             //    "my_dbus_addr: 0x", std::hex, my_dbus_addr, std::dec, "\n"
             //);
             #ifdef RISCV_CPU_PROFILE
-            profile_finish_cnt = 0;
+            //profile_finish_cnt = 0;
+            started_profile = true;
             #endif
         }
         return temp;
@@ -1022,7 +1026,7 @@ int main(int argc, char** argv) {
             //    my_reg_pc >= 0x593c0u
             //)
             #ifdef RISCV_CPU_PROFILE
-            profile_finish_cnt >= (CLK_RATE * 1e6) * 0.5 // 0.5 seconds
+            profile_finish_cnt >= (CLK_RATE * 1e6) * 10 //0.5 // 0.5 seconds
             #else       // if !defined(RISCV_CPU_PROFILE)
             false
             #endif      // RISCV_CPU_PROFILE
