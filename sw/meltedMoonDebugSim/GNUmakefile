@@ -112,6 +112,9 @@ endif
 ifeq ($(RISCV_CPU_DEBUG),1)
     CXX_FLAGS:=-DRISCV_CPU_DEBUG=1 $(CXX_FLAGS)
 endif
+ifeq ($(RISCV_CPU_PROFILE),1)
+    CXX_FLAGS:=-DRISCV_CPU_PROFILE=1 $(CXX_FLAGS)
+endif
 
 TRACE_THREADS:=#--trace-threads 2
 MY_THREADS:=1#4#1#2#24#2#1#16#1#4 #8

@@ -67,29 +67,29 @@ import libsnowhouse._
 //}
 
 
-//static constexpr u32 ADDR_PRINT = 0x6000000ul;
-//static constexpr u32 ADDR_EXIT = 0x6000004ul;
-//static constexpr u32 ADDR_TIMER_USEC_LO = 0x6000000ul;
-//static constexpr u32 ADDR_TIMER_USEC_HI = 0x6000004ul;
-//static constexpr u32 ADDR_TIMER_SEC_LO = 0x6000008ul;
-//static constexpr u32 ADDR_TIMER_SEC_HI = 0x600000cul;
-//static constexpr u32 ADDR_UDIV64_INP_LEFT_LO = 0x6000010ul;
-//static constexpr u32 ADDR_UDIV64_INP_LEFT_HI = 0x6000014ul;
-//static constexpr u32 ADDR_UDIV64_INP_RIGHT_LO = 0x6000018ul;
-//static constexpr u32 ADDR_UDIV64_INP_RIGHT_HI = 0x600001cul;
-//static constexpr u32 ADDR_UDIV64_OUTP_QUOT_LO = 0x6000010ul;
-//static constexpr u32 ADDR_UDIV64_OUTP_QUOT_HI = 0x6000014ul;
-//static constexpr u32 ADDR_UDIV64_OUTP_REMA_LO = 0x6000018ul;
-//static constexpr u32 ADDR_UDIV64_OUTP_REMA_HI = 0x600001cul;
+//static constexpr u32 ADDR_PRINT = 0xe000000ul;
+//static constexpr u32 ADDR_EXIT = 0xe000004ul;
+//static constexpr u32 ADDR_TIMER_USEC_LO = 0xe000000ul;
+//static constexpr u32 ADDR_TIMER_USEC_HI = 0xe000004ul;
+//static constexpr u32 ADDR_TIMER_SEC_LO = 0xe000008ul;
+//static constexpr u32 ADDR_TIMER_SEC_HI = 0xe00000cul;
+//static constexpr u32 ADDR_UDIV64_INP_LEFT_LO = 0xe000010ul;
+//static constexpr u32 ADDR_UDIV64_INP_LEFT_HI = 0xe000014ul;
+//static constexpr u32 ADDR_UDIV64_INP_RIGHT_LO = 0xe000018ul;
+//static constexpr u32 ADDR_UDIV64_INP_RIGHT_HI = 0xe00001cul;
+//static constexpr u32 ADDR_UDIV64_OUTP_QUOT_LO = 0xe000010ul;
+//static constexpr u32 ADDR_UDIV64_OUTP_QUOT_HI = 0xe000014ul;
+//static constexpr u32 ADDR_UDIV64_OUTP_REMA_LO = 0xe000018ul;
+//static constexpr u32 ADDR_UDIV64_OUTP_REMA_HI = 0xe00001cul;
 //
-//static constexpr u32 ADDR_IDIV64_INP_LEFT_LO = 0x6000020ul;
-//static constexpr u32 ADDR_IDIV64_INP_LEFT_HI = 0x6000024ul;
-//static constexpr u32 ADDR_IDIV64_INP_RIGHT_LO = 0x6000028ul;
-//static constexpr u32 ADDR_IDIV64_INP_RIGHT_HI = 0x600002cul;
-//static constexpr u32 ADDR_IDIV64_OUTP_QUOT_LO = 0x6000020ul;
-//static constexpr u32 ADDR_IDIV64_OUTP_QUOT_HI = 0x6000024ul;
-//static constexpr u32 ADDR_IDIV64_OUTP_REMA_LO = 0x6000028ul;
-//static constexpr u32 ADDR_IDIV64_OUTP_REMA_HI = 0x600002cul;
+//static constexpr u32 ADDR_IDIV64_INP_LEFT_LO = 0xe000020ul;
+//static constexpr u32 ADDR_IDIV64_INP_LEFT_HI = 0xe000024ul;
+//static constexpr u32 ADDR_IDIV64_INP_RIGHT_LO = 0xe000028ul;
+//static constexpr u32 ADDR_IDIV64_INP_RIGHT_HI = 0xe00002cul;
+//static constexpr u32 ADDR_IDIV64_OUTP_QUOT_LO = 0xe000020ul;
+//static constexpr u32 ADDR_IDIV64_OUTP_QUOT_HI = 0xe000024ul;
+//static constexpr u32 ADDR_IDIV64_OUTP_REMA_LO = 0xe000028ul;
+//static constexpr u32 ADDR_IDIV64_OUTP_REMA_HI = 0xe00002cul;
 
 
 case class MeltedMoonConfig(
@@ -103,6 +103,7 @@ case class MeltedMoonConfig(
 ) {
   val simClkRate = (
     //75.0 MHz
+    //122.5 MHz
     98.0 MHz
     //100.0 MHz
     //150.0 MHz 
@@ -135,8 +136,6 @@ case class MeltedMoonConfig(
       simVgaClkRate
     )
   )
-
-
 
   //val cpuCfg = SnowHouseCpuConfig(
   //  optFormal=false,
@@ -212,6 +211,19 @@ case class MeltedMoonConfig(
   //def program = testProgram.program
   val cpuCfg = SnowHouseRiscv32imConfig(
     optFormal=false,
+    //optForFmaxPostNumPostExPreWbPipeStages=Some(
+    //  1
+    //),
+    optForFmaxCfg=Some(
+      SnowHouseForFmaxConfig(
+        numPostExPreWbPipeStages=(
+          //0
+          //2
+          1
+          //2
+        )
+      )
+    ),
     targetAltera=true,
     //exposeModMemWordToIo=(
     //  //false
@@ -222,8 +234,8 @@ case class MeltedMoonConfig(
         //25
         //26
         //27
-        //28
-        32
+        28
+        //32
       )
     ),
     instrRamKind=0,
@@ -232,8 +244,19 @@ case class MeltedMoonConfig(
       //"test/snowhousecpu-framebuffer-demo.bin"
       //"other_tests.ignore/melted_moon_doom.bin"
       //"other_tests.ignore/melted_moon_doom-riscv32-timedemo_3.bin"
+      //(
+      //  //"other_tests.ignore/melted_moon_doom-riscv32-timedemo_3"
+      //  ////+ "-poll_info"
+      //  //+ ".bin"
+      //  //"other_tests.ignore/melted_moon_doom-riscv32-timedemo_3.bin"
+      //)
       //"other_tests.ignore/melted_moon_doom-riscv32-debug.bin"
-      "other_tests.ignore/melted_moon_doom-riscv32-no_timedemo.bin"
+      (
+        //"other_tests.ignore/melted_moon_doom-riscv32-no_timedemo.bin"
+        "other_tests.ignore/melted_moon_doom-riscv32-no_timedemo"
+        + "-poll_info"
+        + ".bin"
+      )
       //"other_tests.ignore/melted_moon_doom-enable_irqs.bin"
       //"other_tests.ignore/my_software_3d_renderer.bin"
       //"debug/snowhousecpu-framebuffer-demo-320x240.bin"
@@ -256,8 +279,8 @@ case class MeltedMoonConfig(
     ),
     icacheDepthWords=(
       //8192  // numWays * (32 kiB) icache
-      //4096  // numWays * (16 kiB) icache
-      2048 // numWays * (8 kiB) icache
+      4096  // numWays * (16 kiB) icache
+      //2048 // numWays * (8 kiB) icache
       //1024 // numWays * (4 kiB) icache
     ),
     icacheNumWays=(
@@ -267,6 +290,7 @@ case class MeltedMoonConfig(
       4
       //2
       //3
+      //4
     ),
     dcacheDepthWords=(
       //8192 // numWays * (32 kiB) dcache
@@ -280,14 +304,15 @@ case class MeltedMoonConfig(
       4
       //8
       //3
+      //4
     ),
     icacheLineWordMemRamStyleAltera=(
       //"no_rw_check, MLAB"
       "no_rw_check, M10K"
     ),
     icacheLineAttrsMemRamStyleAltera=(
-      //"no_rw_check, MLAB"
-      "no_rw_check, M10K"
+      "no_rw_check, MLAB"
+      //"no_rw_check, M10K"
       //"no_rw_check, logic"
       //"no_rw_check, MLAB"
     ),
@@ -297,13 +322,15 @@ case class MeltedMoonConfig(
       //"MLAB"
     ),
     dcacheLineAttrsMemRamStyleAltera=(
-      //"no_rw_check, MLAB"
-      "no_rw_check, M10K"
+      "no_rw_check, MLAB"
+      //"no_rw_check, M10K"
       //"no_rw_check, logic"
     ),
     branchTgtBufSizeLog2=(
+      //log2Up(256)
+      log2Up(128)
       //log2Up(64)
-      log2Up(32)
+      //log2Up(32)
     ),
     branchTgtBufNumWays=(
       //4
@@ -321,7 +348,7 @@ case class MeltedMoonConfig(
   val vgaTimingInfo = (
     LcvVgaTimingInfo(
       pixelClk=(
-        24.5 MHz // for 98.0 MHz main clk (84 MHz VGA Ctrl clk)
+        24.5 MHz // for 98.0 MHz main clk
         //28.0 MHz
       ),
       htiming=LcvVgaTimingHv(
@@ -718,6 +745,8 @@ case class MeltedMoonNonIrqMmioIo(
     LcvBusIo(cfg.cpuCfg.shCfg.subCfg.lcvDbusEtcCfg.loBusCfg)
   )
   val outpChar = out(Flow(UInt(8 bits)))
+  //val myStartVblankCond = in(Bool())
+  val inpPollInfo = in(cloneOf(bus.h2dBus.data))
 }
 
 case class MeltedMoonNonIrqMmio(
@@ -766,6 +795,18 @@ case class MeltedMoonNonIrqMmio(
       init=io.bus.h2dBus.payload.getZero
     )
   )
+
+  val rDbgExitCode = (
+    //KeepAttribute(
+      Reg(UInt(cfg.cpuCfg.mainWidth bits))
+      init(0x0)
+    //)
+  )
+
+  val rPollInfo = (
+    Reg(cloneOf(io.inpPollInfo), init=io.inpPollInfo.getZero)
+  )
+
   val myTimerUsecOverflow = (
     //floor((cfg.clkRate / (1.0 kHz)).toDouble).toInt
     floor((cfg.mainClkRate * (1.0 us)).toDouble).toInt
@@ -803,47 +844,46 @@ case class MeltedMoonNonIrqMmio(
     rTimerSecOuterCnt := rTimerSecOuterCnt + 1
   }
 
-
-  val fullAddrBase = 0x6000000
+  val fullAddrBase = 0xe000000
 
   def toRegIdx(fullAddr: Int): Int = (
     (fullAddr - fullAddrBase) >> 2
   )
-  val regIdxDbgPrint = toRegIdx(0x6000000)
-  val regIdxDbgExit = toRegIdx(0x6000004)
+  val regIdxDbgPrint = toRegIdx(0xe000000)
+  val regIdxDbgExit = toRegIdx(0xe000004)
+  val regIdxPollInfo = toRegIdx(0xe00000c)
 
-  val regIdxTimerUsecLo = toRegIdx(0x6000000)
-  val regIdxTimerUsecHi = toRegIdx(0x6000004)
-  val regIdxTimerSecLo = toRegIdx(0x6000008)
-  val regIdxTimerSecHi = toRegIdx(0x600000c)
+  val regIdxTimerUsecLo = toRegIdx(0xe000000)
+  //val regIdxTimerUsecHi = toRegIdx(0xe000004)
+  val regIdxTimerSecLo = toRegIdx(0xe000008)
+  //val regIdxTimerSecHi = toRegIdx(0xe00000c)
 
-  val regIdxUdiv64InpLeftLo = toRegIdx(0x6000010)
-  val regIdxUdiv64InpLeftHi = toRegIdx(0x6000014)
-  val regIdxUdiv64InpRightLo = toRegIdx(0x6000018)
-  val regIdxUdiv64InpRightHi = toRegIdx(0x600001c)
-  val regIdxUdiv64OutpQuotLo = toRegIdx(0x6000010)
-  val regIdxUdiv64OutpQuotHi = toRegIdx(0x6000014)
-  val regIdxUdiv64OutpRemaLo = toRegIdx(0x6000018)
-  val regIdxUdiv64OutpRemaHi = toRegIdx(0x600001c)
+  val regIdxUdiv64InpLeftLo = toRegIdx(0xe000010)
+  val regIdxUdiv64InpLeftHi = toRegIdx(0xe000014)
+  val regIdxUdiv64InpRightLo = toRegIdx(0xe000018)
+  val regIdxUdiv64InpRightHi = toRegIdx(0xe00001c)
+  val regIdxUdiv64OutpQuotLo = toRegIdx(0xe000010)
+  val regIdxUdiv64OutpQuotHi = toRegIdx(0xe000014)
+  val regIdxUdiv64OutpRemaLo = toRegIdx(0xe000018)
+  val regIdxUdiv64OutpRemaHi = toRegIdx(0xe00001c)
 
-  val regIdxIdiv64InpLeftLo = toRegIdx(0x6000020)
-  val regIdxIdiv64InpLeftHi = toRegIdx(0x6000024)
-  val regIdxIdiv64InpRightLo = toRegIdx(0x6000028)
-  val regIdxIdiv64InpRightHi = toRegIdx(0x600002c)
-  val regIdxIdiv64OutpQuotLo = toRegIdx(0x6000020)
-  val regIdxIdiv64OutpQuotHi = toRegIdx(0x6000024)
-  val regIdxIdiv64OutpRemaLo = toRegIdx(0x6000028)
-  val regIdxIdiv64OutpRemaHi = toRegIdx(0x600002c)
+  val regIdxIdiv64InpLeftLo = toRegIdx(0xe000020)
+  val regIdxIdiv64InpLeftHi = toRegIdx(0xe000024)
+  val regIdxIdiv64InpRightLo = toRegIdx(0xe000028)
+  val regIdxIdiv64InpRightHi = toRegIdx(0xe00002c)
+  val regIdxIdiv64OutpQuotLo = toRegIdx(0xe000020)
+  val regIdxIdiv64OutpQuotHi = toRegIdx(0xe000024)
+  val regIdxIdiv64OutpRemaLo = toRegIdx(0xe000028)
+  val regIdxIdiv64OutpRemaHi = toRegIdx(0xe00002c)
 
-  //val regIdxPaletteStart     = toRegIdx(0x6000030)
-  //val regIdxPaletteEnd       = regIdxPalette
+  val numRegs = regIdxIdiv64OutpRemaHi + 1
 
 
   def toDivmodRegIdx(someDivmodRegIdx: Int): Int = (
     someDivmodRegIdx - regIdxUdiv64InpLeftLo
   )
 
-  val numRegs = toRegIdx(0x600002c) + 1
+  //val numRegs = toRegIdx(0xe00002c) + 1
   val numDivmodRegs = (
     regIdxIdiv64OutpRemaHi - regIdxUdiv64InpLeftLo + 1
     //toDivmodRegIdx(numRegs)
@@ -855,6 +895,13 @@ case class MeltedMoonNonIrqMmio(
     )
   )
   val rSavedDivmodH2dBusRegIdx = (
+    Reg(
+      //cloneOf(rSavedH2dPayload.addr(log2Up(numRegs) - 1 downto 2))
+      UInt(log2Up(numRegs) + 2 - 2 bits)
+    )
+    init(0x0)
+  )
+  val rSavedH2dBusRegIdx = (
     Reg(
       //cloneOf(rSavedH2dPayload.addr(log2Up(numRegs) - 1 downto 2))
       UInt(log2Up(numRegs) + 2 - 2 bits)
@@ -936,10 +983,16 @@ case class MeltedMoonNonIrqMmio(
     Reg(UInt(cfg.cpuCfg.mainWidth bits))
     init(0x0)
   )
+  for (idx <- 0 until io.inpPollInfo.getWidth) {
+    when (io.inpPollInfo(idx)) {
+      rPollInfo(idx) := True
+    }
+  }
 
   switch (rState) {
     is (State.IDLE) {
       rSavedH2dPayload := io.bus.h2dBus.payload
+      rSavedH2dBusRegIdx := myH2dBusRegIdx
       rSavedDivmodH2dBusRegIdx := (
         myH2dBusRegIdx - regIdxUdiv64InpLeftLo
       )
@@ -972,11 +1025,28 @@ case class MeltedMoonNonIrqMmio(
     is (State.BUS_RD_NON_DIVMOD) {
       io.bus.d2hBus.valid := True
       io.bus.d2hBus.src := rSavedH2dPayload.src
-      when (!rSavedH2dPayload.addr(3)) {
-        io.bus.d2hBus.data := rTimerUsecOuterCnt
-      } otherwise {
-        io.bus.d2hBus.data := rTimerSecOuterCnt
+      switch (rSavedH2dBusRegIdx) {
+        is (regIdxTimerUsecLo) {
+          io.bus.d2hBus.data := rTimerUsecOuterCnt
+        }
+        is (regIdxDbgExit) {
+          io.bus.d2hBus.data := rDbgExitCode
+        }
+        is (regIdxTimerSecLo) {
+          io.bus.d2hBus.data := rTimerSecOuterCnt
+        }
+        is (regIdxPollInfo) {
+          io.bus.d2hBus.data := rPollInfo
+        }
+        default {
+          io.bus.d2hBus.data := 0x0
+        }
       }
+      //when (!rSavedH2dPayload.addr(3)) {
+      //  io.bus.d2hBus.data := rTimerUsecOuterCnt
+      //} otherwise {
+      //  io.bus.d2hBus.data := rTimerSecOuterCnt
+      //}
       when (io.bus.d2hBus.fire) {
         rState := State.IDLE
       }
@@ -998,8 +1068,35 @@ case class MeltedMoonNonIrqMmio(
       //  is ('\n'.toInt) {
       //  }
       //}
-      io.outpChar.valid := io.bus.d2hBus.fire
-      io.outpChar.payload := rSavedH2dPayload.data(7 downto 0)
+
+      switch (rSavedH2dBusRegIdx) {
+        is (regIdxDbgPrint) {
+          io.outpChar.valid := io.bus.d2hBus.fire
+          io.outpChar.payload := rSavedH2dPayload.data(7 downto 0)
+        }
+        is (regIdxDbgExit) {
+          rDbgExitCode := rSavedH2dPayload.data
+        }
+        //is (regIdxPollInfo) {
+        //}
+        default {
+        }
+      }
+      for (idx <- 0 until rPollInfo.getWidth) {
+        when (
+          rSavedH2dBusRegIdx === regIdxPollInfo
+          && rSavedH2dPayload.data(idx)
+        ) {
+          rPollInfo(idx) := False
+        }
+      }
+
+      //when (rSavedH2dBusRegIdx === regIdxDbgExit) {
+      //  rDbgExitCode := rSavedH2dPayload.data
+      //}
+
+      //io.outpChar.valid := io.bus.d2hBus.fire
+      //io.outpChar.payload := rSavedH2dPayload.data(7 downto 0)
 
       io.bus.d2hBus.valid := True
       io.bus.d2hBus.src := rSavedH2dPayload.src
@@ -1299,17 +1396,22 @@ case class MeltedMoonLcvBusToDdramBridge(
     val burstFirst = Bool()
     val burstLast = Bool()
   }
-  val rdMem = WrPulseRdPipeRamSdpPipe(
-    cfg=WrPulseRdPipeRamSdpPipeConfig(
+  val rdMem = WrPulseRdPipeRam(
+    cfg=WrPulseRdPipeRamConfig(
       modType=MyRdMemModType(),
       wordType=cloneOf(io.ddram.dout),
       wordCount=myDdramBurstCnt,
-      pipeName="rdMem",
+      //pipeName="rdMem",
       setWordFunc=(
         (
           outp: MyRdMemModType,
           inp: MyRdMemModType,
           rdMemWord: UInt,
+          upIsFiring: Bool,
+          myExternalInpCond: Bool,
+          wrPulse: Flow[
+            PipeSimpleDualPortMemDrivePayload[UInt]
+          ],
         ) => {
           //outp.data := rdMemWord
 
@@ -1326,7 +1428,11 @@ case class MeltedMoonLcvBusToDdramBridge(
           outp.burstLast := !inp.addr.orR
         }
       ),
-      arrRamStyleAltera="no_rw_check, MLAB",
+      optWrHistLength=2,
+      arrRamStyleAltera=(
+        //"no_rw_check, MLAB"
+        "no_rw_check, M10K"
+      ),
     )
   )
   val wrMem = RamSimpleDualPort(
@@ -1334,7 +1440,10 @@ case class MeltedMoonLcvBusToDdramBridge(
     cfg=RamSimpleDualPortConfig(
       wordType=cloneOf(io.ddram.dout),
       depth=myDdramBurstCnt,
-      arrRamStyleAltera="no_rw_check, MLAB",
+      arrRamStyleAltera=(
+        "no_rw_check, MLAB"
+        //"no_rw_check, M10K"
+      ),
       doAsyncRead=false,
     )
   )
@@ -2471,7 +2580,8 @@ case class MeltedMoonFbDdram(
   def mySdramCtrlHostIdxIoctl = 0//2//0//2
   def mySdramCtrlHostIdxIcache = 2//4//3//2
   def mySdramCtrlHostIdxDcache = 1//3//4//3
-  def limMySdramCtrlHostIdx = 3//5//4
+  def mySdramCtrlHostIdxDisconnected = 3
+  def limMySdramCtrlHostIdx = 4//3//5//4
 
   //val myTempSdramCtrlBusArbiterSoftReset = (
   //  rose(myTempSoftReset)
@@ -2490,12 +2600,14 @@ case class MeltedMoonFbDdram(
         busCfg=cfg.sdramCtrlCfg.busCfg,
         numHosts=limMySdramCtrlHostIdx,
         kind=(
-          LcvBusArbiterKind.Priority
-          //LcvBusArbiterKind.RoundRobin
+          //LcvBusArbiterKind.Priority
+          LcvBusArbiterKind.RoundRobin
         ),
       )
     )
-    arbiter.io.en := True
+    if (arbiter.io.en != null) {
+      arbiter.io.en := True
+    }
     arbiter.io.forceHost.valid := False
     arbiter.io.forceHost.payload := 0
 
@@ -2665,6 +2777,14 @@ case class MeltedMoonFbDdram(
     mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxDcache)
     //myCpuDcacheSoftReset.io.loBus
   )
+  def mySdramCtrlDisconnectedHost = (
+    mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxDisconnected)
+  )
+  mySdramCtrlDisconnectedHost.h2dBus.valid := False
+  mySdramCtrlDisconnectedHost.h2dBus.payload := (
+    mySdramCtrlDisconnectedHost.h2dBus.payload.getZero
+  )
+  mySdramCtrlDisconnectedHost.d2hBus.ready := False
 
   //mySdramCtrlBusArbiter.io.hostVec(mySdramCtrlHostIdxIcache) <-/< (
   //  myCpuIcacheSoftReset.io.hiBus
@@ -2843,8 +2963,8 @@ case class MeltedMoonFbDdram(
       io.vgaPhys.col := io.vgaPhys.col.getZero
     }
 
-    val myDoVblankIrq = Bool()
-    myDoVblankIrq := (
+    val myStartVblankCond = Bool()
+    myStartVblankCond := (
       rose(
         RegNext(
           (lcvVgaCtrl.io.misc.vpipeS === LcvVgaState.front),
@@ -2970,8 +3090,8 @@ case class MeltedMoonFbDdram(
           lineSizeBytes=64,
           depthWords=(
             //2048
-            //1024
-            512
+            1024
+            //512
             //4 * 1024 /// (4 * 2)
             //256
             //64
@@ -2979,8 +3099,8 @@ case class MeltedMoonFbDdram(
           ).toInt,
           numWays=(
             //1
-            //2
-            4
+            2
+            //4
           ),
           numCpus=1,
           lineWordMemRamStyleAltera=(
@@ -3454,11 +3574,11 @@ case class MeltedMoonFbDdram(
     //  cpu.io.idsIraIrq.ready
     //)
 
-    //def myDoVblankIrq = vgaArea.myDoVblankIrq
+    //def myStartVblankCond = vgaArea.myStartVblankCond
     //irqCtrl.io.srcIrqVec(0) := (
     //  //!myCpuAreaSoftReset
     //  //&& 
-    //  myDoVblankIrq
+    //  myStartVblankCond
     //)
 
     //val myTimerIrqOverflow = (
@@ -3716,7 +3836,7 @@ case class MeltedMoonFbDdram(
     //cpu.io.lcvDbus.d2hBus <-/< myDbgDbusSlicer.io.host.d2hBus
 
     myDcache.io.loBus.h2dBus << cpu.io.lcvDbus.h2dBus
-    cpu.io.lcvDbus.d2hBus <-/< myDcache.io.loBus.d2hBus
+    cpu.io.lcvDbus.d2hBus <-< myDcache.io.loBus.d2hBus
 
     //myDbgDbusSlicer.io.host.h2dBus <-/< cpu.io.lcvDbus.h2dBus
     //cpu.io.lcvDbus.d2hBus <-/< myDbgDbusSlicer.io.host.d2hBus
@@ -3730,8 +3850,6 @@ case class MeltedMoonFbDdram(
     myDbgDbusSlicer.io.host <-/< myDcache.io.mmioHiBus
 
     //mySdramCtrlDcacheHost <-/< mySlicedNonFbDcacheHost
-
-
 
     //mySlicedDcacheHost.h2dBus.translateInto(
     //  mySdramCtrlDcacheHost.h2dBus
@@ -3803,6 +3921,11 @@ case class MeltedMoonFbDdram(
 
     val nonIrqMmio = MeltedMoonNonIrqMmio(cfg=cfg)
     nonIrqMmio.io.bus <-/< mySlicedIoNonIrqMmioHost
+    nonIrqMmio.io.inpPollInfo := (
+      (
+        vgaArea.myStartVblankCond
+      ).asUInt.resize(nonIrqMmio.io.inpPollInfo.getWidth)
+    )
     io.outpChar := nonIrqMmio.io.outpChar
   }
   //--------
@@ -4500,8 +4623,8 @@ case class MeltedMoonForSim(
       rVgaPhys.col := rVgaPhys.col.getZero
     }
 
-    val myDoVblankIrq = Bool()
-    myDoVblankIrq := (
+    val myStartVblankCond = Bool()
+    myStartVblankCond := (
       rose(
         RegNext(
           (lcvVgaCtrl.io.misc.vpipeS === LcvVgaState.front),
@@ -4893,11 +5016,11 @@ case class MeltedMoonForSim(
     //  cpu.io.idsIraIrq.ready
     //)
 
-    //def myDoVblankIrq = vgaArea.myDoVblankIrq
+    //def myStartVblankCond = vgaArea.myStartVblankCond
     //irqCtrl.io.srcIrqVec(0) := (
     //  //!myCpuAreaSoftReset
     //  //&& 
-    //  myDoVblankIrq
+    //  myStartVblankCond
     //)
 
     //val myTimerIrqOverflow = (
@@ -5149,7 +5272,7 @@ case class MeltedMoonForSim(
     //mySdramCtrlNonFbDcacheHost <-/< myNonFbDcache.io.hiBus
 
     myNonFbDcache.io.loBus.h2dBus << cpu.io.lcvDbus.h2dBus
-    cpu.io.lcvDbus.d2hBus <-/< myNonFbDcache.io.loBus.d2hBus
+    cpu.io.lcvDbus.d2hBus <-< myNonFbDcache.io.loBus.d2hBus
 
     //myDbgDbusSlicer.io.host.h2dBus <-/< cpu.io.lcvDbus.h2dBus
     //cpu.io.lcvDbus.d2hBus <-/< myDbgDbusSlicer.io.host.d2hBus
@@ -5235,6 +5358,11 @@ case class MeltedMoonForSim(
 
     val nonIrqMmio = MeltedMoonNonIrqMmio(cfg=cfg)
     nonIrqMmio.io.bus <-/< mySlicedIoNonIrqMmioHost
+    nonIrqMmio.io.inpPollInfo := (
+      (
+        vgaArea.myStartVblankCond
+      ).asUInt.resize(nonIrqMmio.io.inpPollInfo.getWidth)
+    )
     io.outpChar := nonIrqMmio.io.outpChar
   }
   //--------
@@ -5438,13 +5566,14 @@ case class MeltedMoon(
   val rMyDbgResetState = (
     Reg(Bool(), init=True)
   )
-  //if (io.ddram != null) {
-  //  when (
-  //    rose(io.joystick(0)(0))
-  //  ) {
-  //    rMyDbgResetState := True
-  //  }
-  //}
+  if (io.ddram != null) {
+    //when (
+    //  //rose(io.joystick(0)(0))
+    //  rose(io.ioctl.download)
+    //) {
+    //  rMyDbgResetState := True
+    //}
+  }
   when (
     //fell(io.ioctl.download)
     if (
@@ -5750,8 +5879,8 @@ case class MeltedMoon(
 //      io.vgaPhys.col := io.vgaPhys.col.getZero
 //    }
 //
-//    val myDoVblankIrq = Bool()
-//    myDoVblankIrq := (
+//    val myStartVblankCond = Bool()
+//    myStartVblankCond := (
 //      rose(
 //        RegNext(
 //          (lcvVgaCtrl.io.misc.vpipeS === LcvVgaState.front),
@@ -6072,12 +6201,12 @@ case class MeltedMoon(
 //      cpu.io.idsIraIrq.ready
 //    )
 //
-//    def myDoVblankIrq = vgaArea.myDoVblankIrq
+//    def myStartVblankCond = vgaArea.myStartVblankCond
 //    irqCtrl.io.srcIrqVec(0) := (
 //      //!io.softReset
 //      //!myCpuAreaSoftReset
 //      //&& 
-//      myDoVblankIrq
+//      myStartVblankCond
 //    )
 //
 //    val myTimerIrqOverflow = (
@@ -6807,8 +6936,8 @@ case class MeltedMoon(
 //      io.vgaPhys.col := io.vgaPhys.col.getZero
 //    }
 //
-//    val myDoVblankIrq = Bool()
-//    myDoVblankIrq := (
+//    val myStartVblankCond = Bool()
+//    myStartVblankCond := (
 //      rose(
 //        RegNext(
 //          (lcvVgaCtrl.io.misc.vpipeS === LcvVgaState.front),
@@ -7189,12 +7318,12 @@ case class MeltedMoon(
 //      cpu.io.idsIraIrq.ready
 //    )
 //
-//    def myDoVblankIrq = vgaArea.myDoVblankIrq
+//    def myStartVblankCond = vgaArea.myStartVblankCond
 //    irqCtrl.io.srcIrqVec(0) := (
 //      //!io.softReset
 //      //!myCpuAreaSoftReset
 //      //&& 
-//      myDoVblankIrq
+//      myStartVblankCond
 //    )
 //
 //    val myTimerIrqOverflow = (
@@ -8002,19 +8131,19 @@ case class MeltedMoon(
 //      io.vgaPhys.col := io.vgaPhys.col.getZero
 //    }
 //
-//    val myDoVblankIrq = Bool()
+//    val myStartVblankCond = Bool()
 //    //val rSavedDoVblankIrq = Reg(Bool(), init=False)
 //    //val stickyDoVblankIrq = (
-//    //  myDoVblankIrq
+//    //  myStartVblankCond
 //    //  || rSavedDoVblankIrq
 //    //)
-//    //when (myDoVblankIrq) {
+//    //when (myStartVblankCond) {
 //    //  rSavedDoVblankIrq := True
 //    //}
 //    //when (vblankIrqFifo.io.push.fire) {
 //    //  rSavedDoVblankIrq := False
 //    //}
-//    myDoVblankIrq := (
+//    myStartVblankCond := (
 //      rose(
 //        RegNext(
 //          (vgaCtrlArea.lcvVgaCtrl.io.misc.vpipeS === LcvVgaState.front),
@@ -8564,8 +8693,8 @@ case class MeltedMoon(
 //    cpu.io.idsIraIrq.nextValid := irqCtrl.io.dstIrq.nextValid
 //    irqCtrl.io.dstIrq.ready := cpu.io.idsIraIrq.ready
 //
-//    def myDoVblankIrq = otherVgaArea.myDoVblankIrq
-//    irqCtrl.io.srcIrqVec(0) := myDoVblankIrq
+//    def myStartVblankCond = otherVgaArea.myStartVblankCond
+//    irqCtrl.io.srcIrqVec(0) := myStartVblankCond
 //
 //    val myTimerIrqOverflow = (
 //      floor((cfg.clkRate / (1.0 kHz)).toDouble).toInt
@@ -9085,17 +9214,22 @@ case class MeltedMoonSimDut(
       val data = UInt(32 bits)
       val addr = UInt(32 bits)
     }
-    val sdramInitRam = WrPulseRdPipeRamSdpPipe(
-      cfg=WrPulseRdPipeRamSdpPipeConfig(
+    val sdramInitRam = WrPulseRdPipeRam(
+      cfg=WrPulseRdPipeRamConfig(
         modType=MySdramModType(),
         wordType=UInt(32 bits),
         wordCount=sdramInitRamInitBigInt.size,
-        pipeName="sdramInitRam",
+        //pipeName="sdramInitRam",
         setWordFunc=(
           (
             outp: MySdramModType,
             inp: MySdramModType,
-            rdMemWord: UInt
+            rdMemWord: UInt,
+            upIsFiring: Bool,
+            myExternalInpCond: Bool,
+            wrPulse: Flow[
+              PipeSimpleDualPortMemDrivePayload[UInt]
+            ],
           ) => {
             outp.data := rdMemWord
             outp.addr := inp.addr

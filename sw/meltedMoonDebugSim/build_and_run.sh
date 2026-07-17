@@ -2,7 +2,7 @@
 
 TRACE=0
 RISCV_CPU_DEBUG=0
-
+RISCV_CPU_PROFILE=0
 
 if (($# != 0)); then
     if (($1 == 1)); then
@@ -14,6 +14,13 @@ if (($# != 0)); then
         TRACE=1
         RISCV_CPU_DEBUG=1
     fi
+
+fi
+
+if (($# > 1)); then
+    if (($2 == 1)); then
+        RISCV_CPU_PROFILE=1
+    fi
 fi
 
 #if ((TRACE == 0)); then
@@ -21,10 +28,28 @@ fi
 #else
 #    make clean && make TRACE=1 verilate && make TRACE=1 -j12 --output-sync && ./meltedMoonDebugSim
 #fi
-make clean \
-    && make TRACE=$TRACE RISCV_CPU_DEBUG=$RISCV_CPU_DEBUG verilate \
-    && make TRACE=$TRACE RISCV_CPU_DEBUG=$RISCV_CPU_DEBUG -j12 --output-sync \
+MY_MAKE_FLAGS=""
+MY_MAKE_FLAGS="$MY_MAKE_FLAGS TRACE=$TRACE"
+MY_MAKE_FLAGS="$MY_MAKE_FLAGS RISCV_CPU_DEBUG=$RISCV_CPU_DEBUG"
+MY_MAKE_FLAGS="$MY_MAKE_FLAGS RISCV_CPU_PROFILE=$RISCV_CPU_PROFILE"
+
+DO_CLEAN_FIRST=1
+
+if (($# > 2)); then
+    if (($3 == 0)); then
+        DO_CLEAN_FIRST=0
+    fi
+fi
+
+if (($DO_CLEAN_FIRST != 0)); then
+    make clean \
+    && make $MY_MAKE_FLAGS verilate \
+    && make $MY_MAKE_FLAGS -j12 --output-sync \
     && ./meltedMoonDebugSim
+else
+    make $MY_MAKE_FLAGS -j12 --output-sync \
+    && ./meltedMoonDebugSim
+fi
 
 #
 ##make verilate && make -j18

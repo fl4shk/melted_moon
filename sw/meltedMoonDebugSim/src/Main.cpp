@@ -166,6 +166,7 @@ static constexpr double
         //= 50.0,
         //= 75.0,
         //= 100.0,
+        //= 122.5,
         = 98.0,
         //= 125.0,
         //= 150.0,
@@ -811,6 +812,7 @@ int main(int argc, char** argv) {
     //top->vgaClk_reset = 1;
 
     size_t tick_cnt = 0;
+    size_t profile_finish_cnt = 0;
     auto end_tick = [&]() -> void {
         ++tick_cnt;
         top->eval();
@@ -828,6 +830,11 @@ int main(int argc, char** argv) {
         //top->clk = tick_cnt % 2;
         //top->vgaClk_clk = tick_cnt % (2 * CLKS_PER_PIXEL);
         top->clk = !top->clk;
+        #ifdef RISCV_CPU_PROFILE
+        if (!top->clk) {
+            ++profile_finish_cnt;
+        }
+        #endif      // RISCV_CPU_PROFILE
         //if ((tick_cnt % (2 * CLKS_PER_PIXEL)) == 0) {
         //  top->vgaClk_clk = !top->vgaClk_clk;
         //}
@@ -904,6 +911,9 @@ int main(int argc, char** argv) {
     //auto& ofile = std::cout;
     //size_t prev_should_ignore_instr = false;
     //bool prev_other_temp_cond = false;
+    std::string dasm_str;
+    const std::string profile_dasm_dont_care_str = "jal zero,";
+
     auto should_write_ofile = [&]() -> bool {
         return (
             (
@@ -911,15 +921,27 @@ int main(int argc, char** argv) {
                 || trace->isOpen()
             )
             && ofile.is_open()
+            #ifdef RISCV_CPU_PROFILE
+            && (
+                dasm_str.at(0) == 'j'
+            )
+            && (
+                dasm_str.size() < profile_dasm_dont_care_str.size()
+                || (
+                    dasm_str.substr(profile_dasm_dont_care_str.size())
+                    != profile_dasm_dont_care_str
+                )
+            )
+            #endif     // RISCV_CPU_PROFILE
         );
     };
     size_t stuck_animation_cnt = 0;
     size_t my_reg_pc = 0;
+    size_t my_should_ignore_instr = 0;
     size_t my_dbus_addr = 0;
     size_t my_wr_data = 0;
     std::array<size_t, 2> my_prev_reg_pc_arr = {0, 0};
 
-    std::string dasm_str;
     auto should_start_debug_main_cond = [&]() -> bool {
         //printout(
         //    "my_dbus_addr: 0x", std::hex, my_dbus_addr, std::dec, "\n"
@@ -934,8 +956,9 @@ int main(int argc, char** argv) {
             //my_reg_pc == 0x224u
             //false
 
-            true
-            //my_reg_pc == 0x3e794u //0x1c68u//0x3e774u //0x3f694u//0x40580 //0x3fd08u//0x400b4u
+            //true
+            !my_should_ignore_instr
+            && my_reg_pc == 0x3ee88//0x3e888//0x3ef08//0x3e89c//0x3e8c4//0x3ef08//0x3e888//0x3ef08//0x3e87c//0x3ed0cu//0x3ecb8u//0x3f854u//0x3fc8cu//0x128u//0x3e78c//0x3f83c//0x24//0x3e794u //0x1c68u//0x3e774u //0x3f694u//0x40580 //0x3fd08u//0x400b4u
             //my_reg_pc == 0x1104ul //0x10bcul //0xeacul//0xd24ul
             ////stuck_animation_cnt == 5ul
             //my_dbus_addr >= 0x16a6580ul//0x16a6584ul//0x16a6580ul // 0x16a6584ul
@@ -971,15 +994,19 @@ int main(int argc, char** argv) {
             //    //"I_InitGraphics(): Here is `screens[0]`'s address (etc.): 169e1b8; 16a6441 16a6584"
             //    //"./DEMO1.lmp: handle:10000c0 file:1000030"
             //    //"S_Init: default sfx volume 8"
-            //    "ST_Init: Init status bar."
+            //    //"ST_Init: Init status bar."
+            //    "DEMO2.lmp: handle:10000e0 file:10000c0"
             //)
             //--------
         );
-        //if (temp) {
-        //    printout(
-        //        "my_dbus_addr: 0x", std::hex, my_dbus_addr, std::dec, "\n"
-        //    );
-        //}
+        if (temp) {
+            //printout(
+            //    "my_dbus_addr: 0x", std::hex, my_dbus_addr, std::dec, "\n"
+            //);
+            #ifdef RISCV_CPU_PROFILE
+            profile_finish_cnt = 0;
+            #endif
+        }
         return temp;
     };
     //size_t stuck_pc_cnt = 0;
@@ -994,7 +1021,11 @@ int main(int argc, char** argv) {
             //    //my_reg_pc == 0x1198ul
             //    my_reg_pc >= 0x593c0u
             //)
-            //false
+            #ifdef RISCV_CPU_PROFILE
+            profile_finish_cnt >= (CLK_RATE * 1e6) * 0.5 // 0.5 seconds
+            #else       // if !defined(RISCV_CPU_PROFILE)
+            false
+            #endif      // RISCV_CPU_PROFILE
 
             //stuck_pc_cnt >= 512ul
             //stuck_animation_cnt == 6ul//1ul//>= 6ul//11ul
@@ -1019,15 +1050,15 @@ int main(int argc, char** argv) {
             ////        "M_Init: Init miscellaneous info."
             ////    )
             ////)
-            to_dbg_print
-            == (
-                //"[..Error: R_GenerateLookup: texture 55 is >64k"
-                //"Error: R_TextureNumForName: SW1STON2 not found"
-                //"[..Error: Z_CT at PureDOOM.h:46695"
-                //"finished with first doom_update()!"
-                //"okay, done with searching!"
-                "finished with first doom_update()!"
-            )
+            //to_dbg_print
+            //== (
+            //    //"[..Error: R_GenerateLookup: texture 55 is >64k"
+            //    //"Error: R_TextureNumForName: SW1STON2 not found"
+            //    //"[..Error: Z_CT at PureDOOM.h:46695"
+            //    //"finished with first doom_update()!"
+            //    //"okay, done with searching!"
+            //    "finished with first doom_update()!"
+            //)
         );
         if (ret) {
             printout("we should be ending!\n");
@@ -1054,10 +1085,10 @@ int main(int argc, char** argv) {
     // END: CPU debugging stuff
     //--------
 
-    static constexpr u32 ADDR_TIMER_USEC_LO = u32(0x86000000ul);
-    static constexpr u32 ADDR_TIMER_USEC_HI = u32(0x86000004ul);
-    static constexpr u32 ADDR_TIMER_SEC_LO = u32(0x86000008ul);
-    static constexpr u32 ADDR_TIMER_SEC_HI = u32(0x8600000cul);
+    static constexpr u32 ADDR_TIMER_USEC_LO = u32(0xe000000ul);
+    static constexpr u32 ADDR_TIMER_USEC_HI = u32(0xe000004ul);
+    static constexpr u32 ADDR_TIMER_SEC_LO = u32(0xe000008ul);
+    static constexpr u32 ADDR_TIMER_SEC_HI = u32(0xe00000cul);
     auto my_check_instr_name = [&dasm_str](
         const std::string& to_cmp
     ) -> bool {
@@ -1179,7 +1210,7 @@ int main(int argc, char** argv) {
         my_reg_pc = (
             top->cpuDbgInfo_laggingRegPcAtRegFileWrite
         );
-        const size_t my_should_ignore_instr = (
+        my_should_ignore_instr = (
             size_t(top->cpuDbgInfo_shouldIgnoreInstrAtRegFileWrite)
         );
         const size_t my_ps_id_bubble = (
@@ -1307,7 +1338,7 @@ int main(int argc, char** argv) {
                 !ofile.is_open()
                 && should_start_debug_main_cond()
             ) {
-                //ofile.open(my_ofile_name);
+                ofile.open(my_ofile_name);
             }
             if (
                 (
@@ -1365,6 +1396,16 @@ int main(int argc, char** argv) {
                     }
                 }
                 #endif      // RISCV_CPU_DEBUG
+
+                #ifdef RISCV_CPU_PROFILE
+                #ifndef RISCV_CPU_DEBUG
+                    dasm_str = *MeltedMoonDebugRiscvEmu::disasm_one_instr(
+                        my_enc_instr,
+                        //saved_reg_pc
+                        my_reg_pc
+                    );
+                #endif
+                #endif      // RISCV_CPU_PROFILE
                 //--------
                 const std::string my_pc_chng_str = (
                     temp_cond.at(1)
@@ -1387,6 +1428,14 @@ int main(int argc, char** argv) {
                         ")",
                         "    "
                     );
+                    #ifdef RISCV_CPU_PROFILE
+                    fprintout(
+                        ofile,
+                        "cycles:",
+                        profile_finish_cnt,
+                        "    "
+                    );
+                    #endif
                     fprintout(
                         ofile,
                         "("
