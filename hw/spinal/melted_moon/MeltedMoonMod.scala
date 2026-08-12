@@ -293,8 +293,8 @@ case class MeltedMoonConfig(
     icacheDepthWords=(
       //8192  // numWays * (32 kiB) icache
       //4096  // numWays * (16 kiB) icache
-      //2048 // numWays * (8 kiB) icache
-      1024 // numWays * (4 kiB) icache
+      2048 // numWays * (8 kiB) icache
+      //1024 // numWays * (4 kiB) icache
     ),
     icacheNumWays=(
       //2
@@ -307,14 +307,14 @@ case class MeltedMoonConfig(
     ),
     dcacheDepthWords=(
       //8192 // numWays * (32 kiB) dcache
-      //4096 // numWays * (16 kiB) dcache
+      4096 // numWays * (16 kiB) dcache
       //2048 // numWays * (8 kiB) dcache
-      1024 // numWays * (4 kiB) dcache
+      //1024 // numWays * (4 kiB) dcache
     ),
     dcacheNumWays=(
       //2
-      2
-      //4
+      //2
+      4
       //5
       //6
       //8
@@ -9481,14 +9481,19 @@ case class MeltedMoonNotForSim(
     )
     mySdramCtrl.io.sdram <> io.sdram
     //mySdramCtrl.io.bus <-/< mySdramCtrlSoftReset.io.hiBus
+    //mySdramCtrl.io.bus.h2dBus.valid := False
+    //mySdramCtrl.io.bus.h2dBus.payload := (
+    //  mySdramCtrl.io.bus.h2dBus.payload.getZero
+    //)
+    //mySdramCtrl.io.bus.d2hBus.ready := False
 
     val myLcvBusToDdramBridge = MeltedMoonLcvBusToDdramBridge(cfg=cfg)
     io.ddram <> myLcvBusToDdramBridge.io.ddram
-    //myLcvBusToDdramBridge.io.lcvBus.h2dBus.valid := False
-    //myLcvBusToDdramBridge.io.lcvBus.h2dBus.payload := (
-    //  myLcvBusToDdramBridge.io.lcvBus.h2dBus.payload.getZero
-    //)
-    //myLcvBusToDdramBridge.io.lcvBus.d2hBus.ready := False
+    myLcvBusToDdramBridge.io.lcvBus.h2dBus.valid := False
+    myLcvBusToDdramBridge.io.lcvBus.h2dBus.payload := (
+      myLcvBusToDdramBridge.io.lcvBus.h2dBus.payload.getZero
+    )
+    myLcvBusToDdramBridge.io.lcvBus.d2hBus.ready := False
   }
 
   def mySdramCtrl = myTestArea.mySdramCtrl
@@ -9571,10 +9576,11 @@ case class MeltedMoonNotForSim(
   //--------
   def mySdramCtrlHostIdxFbDcache = 0//1//0
   def mySdramCtrlHostIdxFbInit = 0//1//2//1
-  def mySdramCtrlHostIdxIoctl = 0//1//2//0//2
-  def mySdramCtrlHostIdxIcache = 2//3//4//3//2
-  def mySdramCtrlHostIdxNonFbDcache = 1//2//3//4//3
-  def limMySdramCtrlHostIdx = 3//4//5//4
+  def mySdramCtrlHostIdxIoctl = 1//0//1//2//0//2
+  def mySdramCtrlHostIdxIcache = 3//2//3//4//3//2
+  def mySdramCtrlHostIdxNonFbDcache = 2//1//2//3//4//3
+  //def mySdramCtrlHostIdxDisconnected = 3
+  def limMySdramCtrlHostIdx = 4//3//4//5//4
 
   //val myTempSdramCtrlBusArbiterSoftReset = (
   //  rose(myTempSoftReset)
@@ -9593,12 +9599,14 @@ case class MeltedMoonNotForSim(
         busCfg=cfg.sdramCtrlCfg.busCfg,
         numHosts=limMySdramCtrlHostIdx,
         kind=(
-          LcvBusArbiterKind.Priority
-          //LcvBusArbiterKind.RoundRobin
+          //LcvBusArbiterKind.Priority
+          LcvBusArbiterKind.RoundRobin
         ),
       )
     )
-    arbiter.io.en := True
+    if (arbiter.io.en != null) {
+      arbiter.io.en := True
+    }
     arbiter.io.forceHost.valid := False
     arbiter.io.forceHost.payload := 0
 
@@ -10042,16 +10050,16 @@ case class MeltedMoonNotForSim(
             "no_rw_check, M10K"
           ),
           lineAttrsMemRamStyleAltera=(
-            //"no_rw_check, MLAB"
-            "no_rw_check, M10K"
+            "no_rw_check, MLAB"
+            //"no_rw_check, M10K"
           ),
         ),
         hiBusCacheCfg=None,
       ))
     )
 
-    myLcvBusToDdramBridge.io.lcvBus <-/< myFbDcache.io.hiBus
-    //mySdramCtrlFbDcacheHost <-/< myFbDcache.io.hiBus
+    //myLcvBusToDdramBridge.io.lcvBus <-/< myFbDcache.io.hiBus
+    mySdramCtrlFbDcacheHost <-/< myFbDcache.io.hiBus
     myFbDcache.io.mmioHiBus.h2dBus.ready := False
     myFbDcache.io.mmioHiBus.d2hBus.valid := False
     myFbDcache.io.mmioHiBus.d2hBus.payload := (
@@ -16936,8 +16944,8 @@ object MeltedMoonDebugToVerilog extends App {
     sdramCtrlUseAltddioOut=false,
     dbgExposeExtrasAtRegFileWrite=true,
     dbgUseLcvBusMem=(
-      //true
-      false
+      true
+      //false
     ),
   )
   Config.spinalExt(

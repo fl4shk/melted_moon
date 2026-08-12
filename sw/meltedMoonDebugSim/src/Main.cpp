@@ -168,17 +168,17 @@ static constexpr double
         //= 100.0,
         //= 122.5,
         //= 98.0,
-        = 95.0,
-        //= 84.0,
+        //= 95.0,
+        = 84.0,
         //= 125.0,
         //= 150.0,
         //= 200.0,
         //= 24.0,
     PIXEL_CLK
         //= 100.0;
-        //= 28.0;
+        = 28.0;
         //= 24.5;
-        = 23.75;
+        //= 23.75;
         //= 25.0;
         //= 12.5;
         //= 6.0;
@@ -1027,9 +1027,11 @@ int main(int argc, char** argv) {
         const bool temp = (
             //--------
             //pc(y):0xf494    disasm:(addi t2, zero, 0x6)    (zero=0x0  zero=0x0)    wrAddr:7    wrData:0x6
-            false
+            //false
             //true
-            //my_seen_dbg_print
+            //!my_should_ignore_instr
+            //&& my_reg_pc > 0x0u
+            my_seen_dbg_print
             //&& 
             //!my_should_ignore_instr
             //&& my_reg_pc == 0x3de80//0x3e8ac//0x3ea10//0xf494
