@@ -41,14 +41,16 @@ if (($# > 2)); then
     fi
 fi
 
+echo $MY_MAKE_FLAGS "DO_CLEAN_FIRST=$DO_CLEAN_FIRST"
+
 if (($DO_CLEAN_FIRST != 0)); then
     make clean \
     && make $MY_MAKE_FLAGS verilate \
     && make $MY_MAKE_FLAGS -j12 --output-sync \
-    && ./meltedMoonDebugSim
+    && VERILATOR_NUMA_STRATEGY=none ./meltedMoonDebugSim
 else
     make $MY_MAKE_FLAGS -j12 --output-sync \
-    && ./meltedMoonDebugSim
+    && VERILATOR_NUMA_STRATEGY=none ./meltedMoonDebugSim
 fi
 
 #

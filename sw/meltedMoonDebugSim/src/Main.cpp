@@ -167,14 +167,18 @@ static constexpr double
         //= 75.0,
         //= 100.0,
         //= 122.5,
-        = 98.0,
+        //= 98.0,
+        = 95.0,
+        //= 84.0,
         //= 125.0,
         //= 150.0,
         //= 200.0,
         //= 24.0,
     PIXEL_CLK
         //= 100.0;
-        = 24.5;
+        //= 28.0;
+        //= 24.5;
+        = 23.75;
         //= 25.0;
         //= 12.5;
         //= 6.0;
@@ -902,9 +906,10 @@ int main(int argc, char** argv) {
         MeltedMoonDebugRiscvEmu::GPR_NAMES_ARR
     );
     std::array<u32, NUM_GPRS> saved_gprs_arr;
-    //std::array<u32, NUM_GPRS> prev_saved_gprs_arr;
+    std::array<u32, NUM_GPRS> prev_saved_gprs_arr;
     //std::array<u32, NUM_GPRS> emu_prev_saved_gprs_arr;
     saved_gprs_arr.fill(0x0u);
+    prev_saved_gprs_arr.fill(0x0u);
     u32 saved_reg_pc = 0x0u;
     //u32 other_saved_reg_pc = 0x0u;
     const char* my_ofile_name = "meltedMoonDebugSim-output.s";
@@ -942,65 +947,165 @@ int main(int argc, char** argv) {
     size_t my_reg_pc = 0;
     size_t my_should_ignore_instr = 0;
     size_t my_dbus_addr = 0;
+
+    size_t my_wr_enable = 0;
+    size_t my_wr_addr = 0;
     size_t my_wr_data = 0;
     std::array<size_t, 2> my_prev_reg_pc_arr = {0, 0};
+    bool my_seen_dbg_print = false;
+    std::array<size_t, 2> my_seen_reg_pc_cnt = {0, 0};
 
     auto should_start_debug_main_cond = [&]() -> bool {
         //printout(
         //    "my_dbus_addr: 0x", std::hex, my_dbus_addr, std::dec, "\n"
         //);
+        if (!my_seen_dbg_print) {
+            my_seen_dbg_print = (
+                to_dbg_print
+                //== "inner: out of range (maybe?): {175, 103}"
+                == (
+                    //"Rast::calc_visib(): _do_push_back(): "
+                    //"y=96 x=136 iy=0 ix=136 "
+                    //"N={0.000000, 0.000000, 1174.343750}"
+                    //"R_InstallSpriteLump(): rotation == 0: sprtemp[frame].rotate:(0 0)"
+                    //"P_InitPicAnims"
+                    //"post S_UpdateSounds(...)"
+                    //"post D_Display()"
+                    //"P_Init: Init Playloop state."
+                    //"M_Init: Init miscellaneous info."
+                    //"R_Init: Init DOOM refresh daemon -"
+                    //"P_Init: Init Playloop state"
+                    //"R_Init: Init DOOM refresh daemon -"
+                    //"finished with first doom_update()!"
+                    //"my_set_rgb555_palette(): END"
+                    //"doom1_wad_size=4196020"
+                    //"ST_Init: Init status bar."
+                    //"Found it! "
+                    //"R_InitData"
+                    //"HU_Init: Setting up heads up display."
+                    //"ST_Init: Init status bar."
+                    //"doom1_wad_size=4196020"
+                    //"I_InitGraphics(): Here is `screens[0]`'s address (etc.): 169e1b8; 16a6441 16a6584"
+                    //"./DEMO1.lmp: handle:10000c0 file:1000030"
+                    //"S_Init: default sfx volume 8"
+                    //"ST_Init: Init status bar."
+                    //"DEMO2.lmp: handle:10000e0 file:10000c0"
+                    //"HU_Init: Setting up heads up display."
+                    //"P_Init: Init Playloop state."
+                    //"ST_Init: Init status bar."
+                    //"DEMO2.lmp: handle:10000e0 file:10000c0"
+                    //"P_Init: Init Playloop state."
+                    //"ST_Init: Init status bar."
+                    //"./doom1.wad: handle:1000030 file:1000010"
+                    //"ST_Init: Init status bar."
+                    //"M_Init: Init miscellaneous info."
+                    //"doom1_wad_size=4669784"
+                    //"Playing demo DEMO3.lmp."
+                    //"doom1_wad_size=4669784"
+                    //"W_Init: Init WADfiles."
+                    //"DEMO3.lmp: handle:10000e0 file:10000a0"
+                    "ST_Init: Init status bar."
+                )
+            );
+        }
+        if (
+            !my_should_ignore_instr
+            && my_reg_pc == 0xe494u
+            && bool(saved_reg_pc != my_reg_pc)
+            && my_seen_reg_pc_cnt.at(0) == 0x0u
+        ) {
+            ++my_seen_reg_pc_cnt.at(0);
+        }
+        if (
+            !my_should_ignore_instr
+            && my_reg_pc == 0x3ead0u
+            && bool(saved_reg_pc != my_reg_pc)
+            && my_seen_reg_pc_cnt.at(0) > 0x0u
+        ) {
+            ++my_seen_reg_pc_cnt.at(1);
+        }
         const bool temp = (
-            //pc(n):0x1164
-            //wrData:0x7c0b    imm:0x0    dbusAddr:0x200fb42
-            //my_reg_pc == 0x1164ul
-            //&& my_wr_data == 0x7c0bul
-            //&& my_dbus_addr == 0x200fb42ul
-            //dasm_str.substr(0u, 3u) == "mul"
-            //my_reg_pc == 0x224u
+            //--------
+            //pc(y):0xf494    disasm:(addi t2, zero, 0x6)    (zero=0x0  zero=0x0)    wrAddr:7    wrData:0x6
+            false
+            //true
+            //my_seen_dbg_print
+            //&& 
+            //!my_should_ignore_instr
+            //&& my_reg_pc == 0x3de80//0x3e8ac//0x3ea10//0xf494
+            //&& my_wr_enable
+            //&& my_wr_data == 0x6
+            ////false
+            //true
             //false
+            //!my_should_ignore_instr
+            //&& my_reg_pc == 0x3de68u
+            ////my_seen_reg_pc_cnt.at(1) >= 2u
+            ////true
+            //// pc(y):0x3f25c    disasm:(sb a1, a4, 0xb)    (a4=0x10000f0  a1=0x0)    wrAddr:0    wrData:0x0    imm:0xb    dbusAddr:0x10000fb
+            //pc(y):0x100    disasm:(addi sp, sp, 0x30)    (sp=0xfffb4c  zero=0x0)    wrAddr:2    wrData:0xfffb7c    imm:0x30    dbusAddr:0xfffb7c    gprs:(zero=0x0 ra=0x3f8 sp=0xfffb4c gp=0x42bf0 tp=0x0 t0=0x3f274 t1=0xf t2=0x0 s0=0x4f2000 s1=0x46fd30 a0=0x10000a0 a1=0x0 a2=0xc a3=0x3f280 a4=0x1 a5=0x0 a6=0x46fd3b a7=0x3 s2=0x616f0 s3=0x4006b4 s4=0x4e98 s5=0x46b000 s6=0x467000 s7=0x0 s8=0x462000 s9=0x0 s10=0x0 s11=0x0 t3=0xffff220d t4=0x4710ac t5=0x471098 t6=0x471078) encInstr:3010113 
+
+            //!my_should_ignore_instr
+            //&& my_reg_pc == 0x100//0x40000//0x24//0x3f5e8//0x3f218//0x3f25c//0x250//0x3f1fc//0x3f638//0x368//0x3ea78//0x3fb90//0x3fc04//0x3fbdc//0x40c5c//0x3f780//0x40c50//0x3f778//0x368//0x3f204//0x3ea98//0x3f700//0x3ebb0//0x32a48//0x3fc08//0x16b98//0x16bb8//0xe494//0x16bc8//0x3f6fc//0x3f714
+            //&& my_dbus_addr == 0x10000fbu
+            //&& my_seen_dbg_print
+
+            //pc(y):0x3eaac    disasm:(lw a1, a7, 0x1c)    (a7=0xe000000  zero=0x0)    wrAddr:11    wrData:0x0
+            //pc(y):0x3fbe0    disasm:(add a5, s4, s0)    (s4=0x27  s0=0x1)    wrAddr:15    wrData:0x28
+            //pc(y):0x26e7c    disasm:(lh a3, s7, 0x8)    (s7=0x108ff98  zero=0x0)    wrAddr:13    wrData:0x18
+            //pc(y):0x3de68    disasm:(lbu a2, a4, 0x0)    (a4=0x46f534  zero=0x0)    wrAddr:12    wrData:0x75
+            //pc(y):0x40030    disasm:(lbu a0, s7, 0x0)    (s7=0x46fd80  zero=0x0)    wrAddr:10    wrData:0xa
+            //pc(y):0x21c84    disasm:(addi a5, a5, 0xfffffa11)    (a5=0x1d5000  zero=0x0)    wrAddr:15    wrData:0x1d4a11
+            //pc(y):0x21c88    disasm:(lw ra, sp, 0x3c)    (sp=0xfff8cc  zero=0x0)    wrAddr:1    wrData:0x3649c    imm:0x3c    dbusAddr:0xfff908
+            //pc(y):0x21c94    disasm:(sw a5, s10, 0xc)    (s10=0x1090f84  a5=0x1d4a11)    wrAddr:0    wrData:0x0    imm:0xc    dbusAddr:0x1090f90
+            //pc(y):0x1b14    disasm:(sub a2, a4, a5)    (a4=0x63  a5=0x74)    wrAddr:12    wrData:0xffffffef
+            //!my_should_ignore_instr
+            //&& my_reg_pc == 0x1b14//0x21c94//0x21c88//0x21c84//0x40030//0x3de68//0x35fcc//0x26e7c//0x9c//0x3fbe0//0x3f468//0x3eaac//0x3fa54//0x3fa68//0x3f048//0x11130//0x3f338//0x3f600 //0xd758//0xd8ac//0x403c8
+            //&& my_wr_enable
+            //&& my_wr_data == 0xffffffef//0x3649c//0x1d4a11//0xa//0x75//0x18//0x28//0x0//0x60a54//0xffffdc//0x60974//0xfff930//0x7f7f7f7f//0x3f774
+            ////&& my_seen_dbg_print
+            //&& (my_dbus_addr & ~0x3u) == 0x1090f90//0xfff908//0x168e750
+            //--------
+            //true
+            //false
+            ////false
+            ////pc(n):0x1164
+            ////wrData:0x7c0b    imm:0x0    dbusAddr:0x200fb42
+//0x3fa50    disasm:(addi a5, a0, 0x0)    (a0=0xc  zero=0x0)    wrAddr:15    wrData:0xc
+            //my_reg_pc == 0x3fa50//0x1164ul
+            //&& my_wr_data == 0xc//0x7c0bul
+            ////&& my_dbus_addr == 0x200fb42ul
+            ////dasm_str.substr(0u, 3u) == "mul"
+            ////my_reg_pc == 0x224u
+            ////false
+
+            //
+            ////pc(n):0x3f600    disasm:(lw ra, sp, 0x1c)    (sp=0xfff8ec  zero=0x0)
+            //// pc(n):0x3f338    disasm:(or t1, a2, a5)    (a2=0x646177  a5=0x7f7f7f7f)    wrAddr:6    wrData:0x7f7f7f7f
+            // pc(y):0x11130    disasm:(addi a4, sp, 0x4)    (sp=0xfff92c  zero=0x0)    wrAddr:14    wrData:0xfff930
+            // pc(y):0x3f048    disasm:(addi a4, a4, 0x24)    (a4=0x60950  zero=0x0)    wrAddr:14    wrData:0x60974
+            //pc(y):0x3fa68    disasm:(sub a4, a4, a0)    (a4=0x1fffffc  a0=0x1000020)    wrAddr:14    wrData:0xffffdc
+            //pc(y):0x3fa54    disasm:(auipc a0, 0x21000)    (zero=0x0  zero=0x0)    wrAddr:10    wrData:0x60a54
 
             //true
-            !my_should_ignore_instr
-            && my_reg_pc == 0x3ee88//0x3e888//0x3ef08//0x3e89c//0x3e8c4//0x3ef08//0x3e888//0x3ef08//0x3e87c//0x3ed0cu//0x3ecb8u//0x3f854u//0x3fc8cu//0x128u//0x3e78c//0x3f83c//0x24//0x3e794u //0x1c68u//0x3e774u //0x3f694u//0x40580 //0x3fd08u//0x400b4u
-            //my_reg_pc == 0x1104ul //0x10bcul //0xeacul//0xd24ul
-            ////stuck_animation_cnt == 5ul
-            //my_dbus_addr >= 0x16a6580ul//0x16a6584ul//0x16a6580ul // 0x16a6584ul
-            //&& my_dbus_addr <= 0x16a6587ul//0x16a657ul
-            //stuck_animation_cnt >= 6ul//11ul
-            //stuck_animation_cnt == 7ul//10ul
-            //true
-            //--------
-            //to_dbg_print
-            ////== "inner: out of range (maybe?): {175, 103}"
-            //== (
-            //    //"Rast::calc_visib(): _do_push_back(): "
-            //    //"y=96 x=136 iy=0 ix=136 "
-            //    //"N={0.000000, 0.000000, 1174.343750}"
-            //    //"R_InstallSpriteLump(): rotation == 0: sprtemp[frame].rotate:(0 0)"
-            //    //"P_InitPicAnims"
-            //    //"post S_UpdateSounds(...)"
-            //    //"post D_Display()"
-            //    //"P_Init: Init Playloop state."
-            //    //"M_Init: Init miscellaneous info."
-            //    //"R_Init: Init DOOM refresh daemon -"
-            //    //"P_Init: Init Playloop state"
-            //    //"R_Init: Init DOOM refresh daemon -"
-            //    //"finished with first doom_update()!"
-            //    //"my_set_rgb555_palette(): END"
-            //    //"doom1_wad_size=4196020"
-            //    //"ST_Init: Init status bar."
-            //    //"Found it! "
-            //    //"R_InitData"
-            //    //"HU_Init: Setting up heads up display."
-            //    //"ST_Init: Init status bar."
-            //    //"doom1_wad_size=4196020"
-            //    //"I_InitGraphics(): Here is `screens[0]`'s address (etc.): 169e1b8; 16a6441 16a6584"
-            //    //"./DEMO1.lmp: handle:10000c0 file:1000030"
-            //    //"S_Init: default sfx volume 8"
-            //    //"ST_Init: Init status bar."
-            //    "DEMO2.lmp: handle:10000e0 file:10000c0"
-            //)
-            //--------
+            ////true
+            ////&& my_wr_enable
+            ////&& my_wr_addr == 23
+            ////&& my_wr_data == 0x13
+            ////my_dbus_addr == 0xfffb7c//0x45fc0//0x45fa4//0x45fb0
+            ////true
+            ////!my_should_ignore_instr
+            ////&& my_reg_pc == 0x16bcc//0x16bdc//0xe494//0x400//0x3ebb0//0x250//0x197d4//0x3f5a0u//0x197d4//0x13f70u//0x3ee88//0x3e888//0x3ef08//0x3e89c//0x3e8c4//0x3ef08//0x3e888//0x3ef08//0x3e87c//0x3ed0cu//0x3ecb8u//0x3f854u//0x3fc8cu//0x128u//0x3e78c//0x3f83c//0x24//0x3e794u //0x1c68u//0x3e774u //0x3f694u//0x40580 //0x3fd08u//0x400b4u
+            ////my_reg_pc == 0x1104ul //0x10bcul //0xeacul//0xd24ul
+            //////stuck_animation_cnt == 5ul
+            ////my_dbus_addr >= 0x16a6580ul//0x16a6584ul//0x16a6580ul // 0x16a6584ul
+            ////&& my_dbus_addr <= 0x16a6587ul//0x16a657ul
+            ////stuck_animation_cnt >= 6ul//11ul
+            ////stuck_animation_cnt == 7ul//10ul
+            ////true
+            ////false
+            ////--------
+            ////--------
         );
         if (temp) {
             //printout(
@@ -1029,6 +1134,14 @@ int main(int argc, char** argv) {
             profile_finish_cnt >= (CLK_RATE * 1e6) * 10 //0.5 // 0.5 seconds
             #else       // if !defined(RISCV_CPU_PROFILE)
             false
+
+            //!my_should_ignore_instr
+            //&& my_reg_pc == 0x26ed0
+            //&& ((my_dbus_addr & ~0x3u) == 0x168e750)
+            //to_dbg_print == (
+            //    //"Error: R_TextureNumForName: SW2METAL not found"
+            //    "Error: rightvol out of bounds"
+            //)
             #endif      // RISCV_CPU_PROFILE
 
             //stuck_pc_cnt >= 512ul
@@ -1075,8 +1188,10 @@ int main(int argc, char** argv) {
     // BEGIN: CPU debugging stuff
     #ifdef RISCV_CPU_DEBUG
     MeltedMoonDebugRiscvEmu emu(
-        //"melted_moon_doom-riscv32-timedemo_3.bin"
-        "melted_moon_doom-riscv32-no_timedemo.bin"
+        //"melted_moon_doom-riscv32-timedemo_3-backup.bin"
+        "melted_moon_doom-riscv32-timedemo_3.bin"
+        //"melted_moon_doom-riscv32-timedemo_3-poll_info.bin"
+        //"melted_moon_doom-riscv32-no_timedemo.bin"
         //"melted_moon_doom-riscv32-debug.bin"
     );
 
@@ -1188,8 +1303,11 @@ int main(int argc, char** argv) {
         //};
 
         //const auto& my_wr_addr = top->cpuDbgInfo_regFileWriteAddr;
-        const size_t my_wr_addr = (
+        my_wr_addr = (
             size_t(top->cpuDbgInfo_regFileWriteAddr)
+        );
+        my_wr_enable = (
+            size_t(top->cpuDbgInfo_regFileWriteEnable)
         );
         my_wr_data = (
             size_t(top->cpuDbgInfo_regFileWriteData)
@@ -1240,6 +1358,7 @@ int main(int argc, char** argv) {
             top->clk
             //!top->vgaClk_clk
         ) {
+            prev_saved_gprs_arr = saved_gprs_arr;
             //if (should_write_ofile()) {
             //    fprintout(
             //        ofile,
@@ -1563,7 +1682,16 @@ int main(int argc, char** argv) {
                         "\n"
                     );
                 }
-                if (my_wr_addr != 0) {
+                //printout(
+                //    std::hex,
+                //    "my_wr_addr=", my_wr_addr, "    "
+                //    "my_wr_data=", my_wr_data, "    "
+                //    "my_wr_enable=", my_wr_enable, "\n"
+                //);
+                if (
+                    my_wr_addr != 0
+                    && my_wr_enable != 0
+                ) {
                     saved_gprs_arr.at(my_wr_addr) = (
                         my_wr_data
                     );
@@ -1592,8 +1720,10 @@ int main(int argc, char** argv) {
             //--------
             // BEGIN: CPU debugging stuff
             #ifdef RISCV_CPU_DEBUG
+            MeltedMoonDebugRiscvEmu::ExecOneInstrRet exec_temp;
             if (
                 !any_kind_of_ignore_please
+                && my_enc_instr != 0x0
                 && (
                     //temp_cond.at(0)
                     //|| temp_cond.at(1)
@@ -1601,15 +1731,31 @@ int main(int argc, char** argv) {
                     bool(saved_reg_pc != my_reg_pc)
                 )
                 //&& my_wr_addr != 0
+                //&& my_wr_enable
             ) {
                 bool found_same_gprs = false;
-                MeltedMoonDebugRiscvEmu::ExecOneInstrRet exec_temp;
+                bool found_same_rs1 = false;
+                bool found_same_rs2 = false;
+                bool found_same_dbus_addr = true;
+
                 for (
                     size_t gprs_chk_cnt=0;
                     gprs_chk_cnt<1u;//2u;//1u; //128u; 
                     ++gprs_chk_cnt
                 ) {
-                    exec_temp = emu.exec_one_instr(tp, false);
+                    exec_temp = emu.exec_one_instr(
+                        tp, false,
+                        std::nullopt, std::nullopt
+                        //my_reg_pc, my_enc_instr
+                    );
+                    if (
+                        gprs_chk_cnt == 0
+                        && exec_temp.bus_addr
+                        && my_dbus_addr != *exec_temp.bus_addr 
+                    ) {
+                        found_same_dbus_addr = false;
+                        break;
+                    }
                     //dasm.push_back(
                     //    my_reg_pc,
                     //    my_enc_instr
@@ -1638,8 +1784,24 @@ int main(int argc, char** argv) {
                             break;
                         }
                     }
+                    if (
+                        prev_saved_gprs_arr.at(exec_temp.rs1)
+                        == my_rd_mem_word_arr.at(0)
+                    ) {
+                        found_same_rs1 = true;
+                    }
+                    if (
+                        prev_saved_gprs_arr.at(exec_temp.rs2)
+                        == my_rd_mem_word_arr.at(1)
+                    ) {
+                        found_same_rs2 = true;
+                    }
+
                     found_same_gprs = !found_any_not_equal;
-                    if (found_same_gprs) {
+                    if (
+                        found_same_gprs
+                        || !found_same_dbus_addr
+                    ) {
                         break;
                     }
                     //--------
@@ -1661,6 +1823,9 @@ int main(int argc, char** argv) {
                     //&& 
                     //exec_temp.pc != my_reg_pc
                     !found_same_gprs
+                    || !found_same_rs1
+                    || !found_same_rs2
+                    || !found_same_dbus_addr
                     //true
                 ) {
                     std::array<std::ostream*, 2> my_ostm_arr = {
@@ -1683,14 +1848,28 @@ int main(int argc, char** argv) {
                             osprintout(
                                 *my_ostm_arr.at(ostm_idx),
                                 std::hex,
-                                "Eek! gprs not same! "
+                                "Eek! Found difference! "
                                 "my_reg_pc:", my_reg_pc, " ",
                                 "saved_reg_pc:", saved_reg_pc, " ",
+                                "my_dbus_addr:", my_dbus_addr, " ",
+                                "*exec_temp.bus_addr:",
+                                    (
+                                        exec_temp.bus_addr
+                                        ? *exec_temp.bus_addr
+                                        : 0x0u
+                                    ),
+                                " ",
                                 "exec_temp.saved_pc:",
                                     exec_temp.saved_pc,
                                 " ",
                                 "exec_temp.pc:",
                                     exec_temp.pc,
+                                " ",
+                                "found_same_rs1:",
+                                    found_same_rs1,
+                                " ",
+                                "found_same_rs2:",
+                                    found_same_rs2,
                                 " ",
                                 std::dec,
                                 "\n"
@@ -1731,7 +1910,12 @@ int main(int argc, char** argv) {
                         }
                     }
                     //std::exit(1);
-                    if (!found_same_gprs) {
+                    if (
+                        !found_same_gprs
+                        //|| !found_same_rs1
+                        //|| !found_same_rs2
+                        || !found_same_dbus_addr
+                    ) {
                         vga.set_do_exit(true);
                     }
                 }

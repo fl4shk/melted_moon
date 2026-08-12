@@ -220,50 +220,50 @@ wire my_soft_reset_1 = (
 
 
 MeltedMoon myMeltedMoon(
-  .pllLocked(pll_locked),
+  .most_pllLocked(pll_locked),
 
-  .joystick_0(joystick_0),
-  .joystick_1(joystick_1),
-  .joystick_2(joystick_2),
-  .joystick_3(joystick_3),
-  .joystick_4(joystick_4),
-  .joystick_5(joystick_5),
+  .most_joystick_0(joystick_0),
+  .most_joystick_1(joystick_1),
+  .most_joystick_2(joystick_2),
+  .most_joystick_3(joystick_3),
+  .most_joystick_4(joystick_4),
+  .most_joystick_5(joystick_5),
 
-  .ddram_clk(ddram_clk),
-  .ddram_busy(ddram_busy),
-  .ddram_burstCnt(ddram_burstCnt),
-  .ddram_addr(ddram_addr),
-  .ddram_dout(ddram_dout),
-  .ddram_doutReady(ddram_doutReady),
-  .ddram_rd(ddram_rd),
-  .ddram_din(ddram_din),
-  .ddram_be(ddram_be),
-  .ddram_we(ddram_we),
+  .most_ddram_clk(ddram_clk),
+  .most_ddram_busy(ddram_busy),
+  .most_ddram_burstCnt(ddram_burstCnt),
+  .most_ddram_addr(ddram_addr),
+  .most_ddram_dout(ddram_dout),
+  .most_ddram_doutReady(ddram_doutReady),
+  .most_ddram_rd(ddram_rd),
+  .most_ddram_din(ddram_din),
+  .most_ddram_be(ddram_be),
+  .most_ddram_we(ddram_we),
 
-  .sdram_dq(sdram_DQ),
-  .sdram_a(temp_sdram_a),
+  .most_sdram_dq(sdram_DQ),
+  .most_sdram_a(temp_sdram_a),
   //.sdram_dqml(temp_sdram_dqml),
   //.sdram_dqmh(temp_sdram_dqmh),
-  .sdram_ba(sdram_BA),
-  .sdram_nCs(sdram_nCS),
-  .sdram_nWe(sdram_nWE),
-  .sdram_nRas(sdram_nRAS),
-  .sdram_nCas(sdram_nCAS),
-  .sdram_cke(sdram_CKE),
-  .sdram_clk(sdram_CLK),
+  .most_sdram_ba(sdram_BA),
+  .most_sdram_nCs(sdram_nCS),
+  .most_sdram_nWe(sdram_nWE),
+  .most_sdram_nRas(sdram_nRAS),
+  .most_sdram_nCas(sdram_nCAS),
+  .most_sdram_cke(sdram_CKE),
+  .most_sdram_clk(sdram_CLK),
 
-  .ioctl_download(ioctl_download),
-  .ioctl_index(ioctl_index),
-  .ioctl_wr(ioctl_wr),
-  .ioctl_addr(ioctl_addr),
-  .ioctl_dout(ioctl_dout),
-  .ioctl_upload(ioctl_upload),
-  .ioctl_upload_req(ioctl_upload_req),
-  .ioctl_upload_index(ioctl_upload_index),
-  .ioctl_din(ioctl_din),
-  .ioctl_rd(ioctl_rd),
-  .ioctl_file_ext(ioctl_file_ext),
-  .ioctl_myWait(
+  .most_ioctl_download(ioctl_download),
+  .most_ioctl_index(ioctl_index),
+  .most_ioctl_wr(ioctl_wr),
+  .most_ioctl_addr(ioctl_addr),
+  .most_ioctl_dout(ioctl_dout),
+  .most_ioctl_upload(ioctl_upload),
+  .most_ioctl_upload_req(ioctl_upload_req),
+  .most_ioctl_upload_index(ioctl_upload_index),
+  .most_ioctl_din(ioctl_din),
+  .most_ioctl_rd(ioctl_rd),
+  .most_ioctl_file_ext(ioctl_file_ext),
+  .most_ioctl_myWait(
     temp_ioctl_myWait
     //ioctl_wait
   ),
@@ -291,12 +291,12 @@ MeltedMoon myMeltedMoon(
     //reset_cpu_reg
     reset_cpu
   ),
-  .softReset_0(
+  .most_softReset_0(
     my_soft_reset_0
     //soft_reset_cpu_reg
     //|| please_do_soft_reset
   ),
-  .softReset_1(
+  .most_softReset_1(
     my_soft_reset_1
     //soft_reset_cpu_reg
     //|| please_do_soft_reset

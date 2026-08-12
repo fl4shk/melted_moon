@@ -7,9 +7,26 @@ create_clock -period "100.0 MHz" [get_pins -compatibility_mode spi|sclk_out] -na
 create_clock -period "10.0 MHz"  [get_pins -compatibility_mode hdmi_i2c|out_clk] -name hdmi_sck
 
 derive_pll_clocks
+#derive_pll_clocks -create_base_clocks
 derive_clock_uncertainty
 
 # Decouple different clock groups (to simplify routing)
+
+#set_clock_groups -exclusive \
+#   -group [get_clocks { *|pll|pll_inst|altera_pll_i|*[*].*|divclk}] \
+#   -group [get_clocks { pll_hdmi|pll_hdmi_inst|altera_pll_i|*[0].*|divclk}] \
+#   -group [get_clocks { pll_audio|pll_audio_inst|altera_pll_i|*[0].*|divclk}] \
+#   -group [get_clocks { spi_sck}] \
+#   -group [get_clocks { hdmi_sck}] \
+#   -group [get_clocks { *|h2f_user0_clk}] \
+#   -group [get_clocks { FPGA_CLK1_50 }] \
+#   -group [get_clocks { FPGA_CLK2_50 }] \
+#   -group [get_clocks { FPGA_CLK3_50 }]
+
+
+# -group [get_clocks { *|pll|pll_inst|altera_pll_i|general[0].*|divclk}]
+# -group [get_clocks { *|pll|pll_inst|altera_pll_i|general[1].*|divclk}]
+
 set_clock_groups -exclusive \
    -group [get_clocks { *|pll|pll_inst|altera_pll_i|*[*].*|divclk}] \
    -group [get_clocks { pll_hdmi|pll_hdmi_inst|altera_pll_i|*[0].*|divclk}] \
@@ -20,6 +37,32 @@ set_clock_groups -exclusive \
    -group [get_clocks { FPGA_CLK1_50 }] \
    -group [get_clocks { FPGA_CLK2_50 }] \
    -group [get_clocks { FPGA_CLK3_50 }]
+
+#set_clock_groups -asynchronous \
+#   -group [get_clocks { *|pll|pll_inst|altera_pll_i|general[0].*|divclk}] \
+#   -group [get_clocks { *|pll|pll_inst|altera_pll_i|general[1].*|divclk}] \
+
+#set_clock_groups -asynchronous \
+#   -group [get_clocks { *|pll|pll_inst|altera_pll_i|*[*].*|divclk}]
+
+# Cut paths for the asynchronous toggle/handshake signals
+#set_false_path -from [get_clocks { clk_sys }] -to [get_clocks { clk_vga }]
+#set_false_path -from [get_clocks { clk_vga }] -to [get_clocks { clk_sys }]
+
+#set_false_path -from [get_clocks { *|StreamCCByToggle|clk}] -to [get_clocks { *|StreamCCByToggle|vgaClk_clk}]
+#set_false_path -from [get_clocks { *|StreamCCByToggle|vgaClk_clk}] -to [get_clocks { *|StreamCCByToggle|clk}]
+#set_false_path -from [get_clocks { *|clk}] -to [get_clocks { *|vgaClk_clk}]
+#set_false_path -from [get_clocks { *|vgaClk_clk}] -to [get_clocks { *|clk}]
+#set_false_path -from { *|clk} -to { *|vgaClk_clk}
+#set_false_path -from { *|vgaClk_clk} -to { *|clk}
+
+# Target the synchronization registers inside the StreamFifoCC instances
+#set_false_path -to [get_registers {*|StreamFifoCC*|*bufferCC*|*stage_*_reg[*]}]
+#set_false_path -to [get_registers {*|StreamCCByToggle*|*bufferCC*|*stage_*_reg[*]}]
+
+#set_false_path -from [get_clocks { *|pll|pll_inst|altera_pll_i|*[*].*|divclk[0]}] -to [get_clocks { *|pll|pll_inst|altera_pll_i|*[*].*|divclk[1]}]
+#set_false_path -from [get_clocks { *|pll|pll_inst|altera_pll_i|*[*].*|divclk[1]}] -to [get_clocks { *|pll|pll_inst|altera_pll_i|*[*].*|divclk[0]}]
+
 
 set_false_path -from [get_ports {KEY*}]
 set_false_path -from [get_ports {BTN_*}]
