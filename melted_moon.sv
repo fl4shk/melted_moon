@@ -348,7 +348,7 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(IOCTL_WIDE)) hps_io
 ///////////////////////   CLOCKS   ///////////////////////////////
 
 wire clk_sys;
-wire clk_vga;
+//wire clk_vga;
 //wire clk_cpu;
 //assign clk_sys = CLK_50M;
 //assign clk_cpu = CLK_50M;
