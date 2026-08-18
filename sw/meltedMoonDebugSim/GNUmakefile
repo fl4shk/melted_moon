@@ -88,7 +88,7 @@ LD_FLAGS:=$(LD_FLAGS) $(EXTRA_LD_FLAGS) $(COMMON_LD_FLAGS) \
 
 
 
-VERILATOR_ROOT = /usr/share/verilator
+VERILATOR_ROOT = /usr/local/share/verilator
 
 V_SOURCES := \
 	$(foreach DIR,$(V_DIRS),$(wildcard $(DIR)/*.v)) \

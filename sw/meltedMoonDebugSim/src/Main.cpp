@@ -817,9 +817,14 @@ int main(int argc, char** argv) {
 
     size_t tick_cnt = 0;
     size_t profile_finish_cnt = 0;
+    //size_t cycles_cnt = 0;
+    size_t instr_commit_cnt = 0;
     bool started_profile = false;
     auto end_tick = [&]() -> void {
         ++tick_cnt;
+        //if (tick_cnt % 2) {
+        //    ++cycles_cnt;
+        //}
         top->eval();
         if (
             trace
@@ -1004,7 +1009,8 @@ int main(int argc, char** argv) {
                     //"doom1_wad_size=4669784"
                     //"W_Init: Init WADfiles."
                     //"DEMO3.lmp: handle:10000e0 file:10000a0"
-                    "ST_Init: Init status bar."
+                    //"ST_Init: Init status bar."
+                    "DEMO1.lmp: handle:10000c0 file:1000030"
                 )
             );
         }
@@ -1027,11 +1033,13 @@ int main(int argc, char** argv) {
         const bool temp = (
             //--------
             //pc(y):0xf494    disasm:(addi t2, zero, 0x6)    (zero=0x0  zero=0x0)    wrAddr:7    wrData:0x6
-            //false
+            false
             //true
+            //cycles_cnt == 102423u
+            //instr_commit_cnt == 122450u//102475//122450//102423u
             //!my_should_ignore_instr
-            //&& my_reg_pc > 0x0u
-            my_seen_dbg_print
+            //&& my_reg_pc == 0x3e104//0x3e0b4//0x3e060u//0x3e060u//> 0x0u
+            //my_seen_dbg_print
             //&& 
             //!my_should_ignore_instr
             //&& my_reg_pc == 0x3de80//0x3e8ac//0x3ea10//0xf494
@@ -1463,7 +1471,7 @@ int main(int argc, char** argv) {
                 !ofile.is_open()
                 && should_start_debug_main_cond()
             ) {
-                ofile.open(my_ofile_name);
+                //ofile.open(my_ofile_name);
             }
             if (
                 (
@@ -1494,6 +1502,7 @@ int main(int argc, char** argv) {
                 !any_kind_of_ignore_please
                 && my_full_temp_cond
             ) {
+                ++instr_commit_cnt;
                 #ifdef RISCV_CPU_DEBUG
                 {
                     auto temp_dasm_str = (
