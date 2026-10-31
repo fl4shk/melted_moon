@@ -64,7 +64,7 @@ module MainSv (
     end
 
     `ifdef STRICT_SDRAM
-    localparam realtime CLK_PERIOD_NS = 1000.0 / 92.0;
+    localparam realtime CLK_PERIOD_NS = 1000.0 / 98.0;
 
     always begin
         //#5ns
