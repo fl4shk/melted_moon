@@ -28,7 +28,7 @@ fi
 #else
 #    make clean && make TRACE=1 verilate && make TRACE=1 -j12 --output-sync && ./meltedMoonDebugSim
 #fi
-MY_MAKE_FLAGS=""
+#MY_MAKE_FLAGS=""
 MY_MAKE_FLAGS="$MY_MAKE_FLAGS TRACE=$TRACE"
 MY_MAKE_FLAGS="$MY_MAKE_FLAGS RISCV_CPU_DEBUG=$RISCV_CPU_DEBUG"
 MY_MAKE_FLAGS="$MY_MAKE_FLAGS RISCV_CPU_PROFILE=$RISCV_CPU_PROFILE"
@@ -41,16 +41,45 @@ if (($# > 2)); then
     fi
 fi
 
+#DO_SAVE=0
+#DO_SAVE_RESTORE=0
+#if (($# >= 4)); 
+#if (($# >= 5)); then
+#    DO_SAVE_RESTORE=1
+#    SAVE_BASENAME="$4"
+#    RESTORE_BASENAME="$5"
+#    #if (($4 != 0)); then
+#    #    DO_SAVE_RESTORE=1
+#    #fi
+#fi
+
+# do_run_sim() {
+#    #if (($DO_SAVE_RESTORE)); then
+#    #    echo "DO_SAVE_RESTORE=1"
+#    #    #VERILATOR_NUMA_STRATEGY=none taskset -c 0 \
+#    #    #    ./meltedMoonDebugSim $SAVE_BASENAME $RESTORE_BASENAME
+#    #else
+#    #    echo "DO_SAVE_RESTORE=0"
+#    #    #VERILATOR_NUMA_STRATEGY=none taskset -c 0 \
+#    #    #    ./meltedMoonDebugSim
+#    #fi
+#}
+
+#MY_MAKE_FLAGS="$MY_MAKE_FLAGS DO_SAVE_RESTORE=$DO_SAVE_RESTORE"
+
 echo $MY_MAKE_FLAGS "DO_CLEAN_FIRST=$DO_CLEAN_FIRST"
 
 if (($DO_CLEAN_FIRST != 0)); then
     make clean \
     && make $MY_MAKE_FLAGS verilate \
     && make $MY_MAKE_FLAGS -j12 --output-sync \
-    && VERILATOR_NUMA_STRATEGY=none ./meltedMoonDebugSim
+
+    #&& do_run_sim
 else
     make $MY_MAKE_FLAGS -j12 --output-sync \
-    && VERILATOR_NUMA_STRATEGY=none ./meltedMoonDebugSim
+
+    #&& do_run_sim
+    #&& VERILATOR_NUMA_STRATEGY=none taskset -c 0 ./meltedMoonDebugSim
 fi
 
 #

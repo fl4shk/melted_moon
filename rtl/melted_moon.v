@@ -99,22 +99,22 @@ endmodule
 
 module melted_moon(
   input         clk_50m,
-	input         clk_sys,
-	//input         clk_vga,
-	//input         vgaClk_clk,
-	//input         clk_cpu,
-	input         reset,
+  input         clk_sys,
+  //input         clk_vga,
+  //input         vgaClk_clk,
+  //input         clk_cpu,
+  input         reset,
 
-	input        [31:0] joystick_0,
-	input        [31:0] joystick_1,
-	input        [31:0] joystick_2,
-	input        [31:0] joystick_3,
-	input        [31:0] joystick_4,
-	input        [31:0] joystick_5,
-	
-	input         pal,
-	input         scandouble,
-	input         pll_locked,
+  input        [31:0] joystick_0,
+  input        [31:0] joystick_1,
+  input        [31:0] joystick_2,
+  input        [31:0] joystick_3,
+  input        [31:0] joystick_4,
+  input        [31:0] joystick_5,
+  
+  input         pal,
+  input         scandouble,
+  input         pll_locked,
 
   output wire  [7:0]   vgaPhys_col_r,
   output wire  [7:0]   vgaPhys_col_g,
@@ -124,36 +124,36 @@ module melted_moon(
   output wire          vgaPixelEn,
   output wire          vgaVisib,
 
-	//output reg    ce_pix,
+  //output reg    ce_pix,
 
-	//output wire    HBlank,
-	//output wire    HSync,
-	//output wire    VBlank,
-	//output wire    VSync,
-	//input [1:0]   buttons,
+  //output wire    HBlank,
+  //output wire    HSync,
+  //output wire    VBlank,
+  //output wire    VSync,
+  //input [1:0]   buttons,
 
-	//output  [7:0] video,
-	//output [23:0] video
+  //output  [7:0] video,
+  //output [23:0] video
 
-	// ARM -> FPGA download
-	input         ioctl_download,
-	  // signal indicating an active download
-	input [15:0]  ioctl_index,
-	  // menu index used to upload the file
-	input         ioctl_wr,
-	input [26:0]  ioctl_addr,
-	  // in WIDE mode address will be incremented by 2
-	input [15:0]  ioctl_dout,
-	input         ioctl_upload,
-	  // signal indicating an active upload
+  // ARM -> FPGA download
+  input         ioctl_download,
+    // signal indicating an active download
+  input [15:0]  ioctl_index,
+    // menu index used to upload the file
+  input         ioctl_wr,
+  input [26:0]  ioctl_addr,
+    // in WIDE mode address will be incremented by 2
+  input [15:0]  ioctl_dout,
+  input         ioctl_upload,
+    // signal indicating an active upload
 
-	output        ioctl_upload_req,
-	  // request to save (must be supported on HPS side for specific core)
-	output [7:0]  ioctl_upload_index,
-	output [15:0] ioctl_din,
-	input         ioctl_rd,
-	input [31:0]  ioctl_file_ext,
-	output        ioctl_wait,
+  output        ioctl_upload_req,
+    // request to save (must be supported on HPS side for specific core)
+  output [7:0]  ioctl_upload_index,
+  output [15:0] ioctl_din,
+  input         ioctl_rd,
+  input [31:0]  ioctl_file_ext,
+  output        ioctl_wait,
 
   output wire          ddram_clk,
   input  wire          ddram_busy,
@@ -166,29 +166,48 @@ module melted_moon(
   output wire [7:0]    ddram_be,
   output wire          ddram_we,
 
-	output        sdram_CLK,
-	output        sdram_CKE,
-	output [12:0] sdram_A,
-	output  [1:0] sdram_BA,
-	inout  [15:0] sdram_DQ,
-	output        sdram_DQML,
-	output        sdram_DQMH,
-	output        sdram_nCS,
-	output        sdram_nCAS,
-	output        sdram_nRAS,
-	output        sdram_nWE
+  output        sdram_CLK,
+  output        sdram_CKE,
+  output [12:0] sdram_A,
+  output  [1:0] sdram_BA,
+  inout  [15:0] sdram_DQ,
+  output        sdram_DQML,
+  output        sdram_DQMH,
+  output        sdram_nCS,
+  output        sdram_nCAS,
+  output        sdram_nRAS,
+  output        sdram_nWE,
+
+  input         uart1_cts,
+  output        uart1_rts,
+  //input         uart1_rx,
+  output        uart1_tx,
+  output        uart1_dtr,
+  input         uart1_dsr
 );
 
 
+reg reset_cpu;
+initial begin
+  reset_cpu = 1'b1;
+end
 
-wire reset_cpu;
-//wire reset_vga;
+wire reset_main_cpu;
+
+always @(posedge clk_sys) begin
+  if (reset_cpu && reset_main_cpu) begin
+    reset_cpu <= 1'b0; 
+  end
+end
 
 melted_moon_clk_domain_reset cpu_clk_domain_reset(
   .clk_50m(clk_50m),
   .pll_locked(pll_locked),
   .clk_main(clk_sys),
-  .reset_main(reset_cpu)
+  .reset_main(
+    //reset_cpu
+    reset_main_cpu
+  )
 );
 
 //melted_moon_clk_domain_reset vga_clk_domain_reset(
@@ -274,6 +293,14 @@ MeltedMoon myMeltedMoon(
   .vgaPhys_vsync(vgaPhys_vsync),
   .vgaPixelEn(vgaPixelEn),
   .vgaVisib(vgaVisib),
+
+  .most_uartIo_tx(uart1_tx),
+  //.most_uartIo_rx(uart1_rx),
+  .most_uartIo_dtr(uart1_dtr),
+  .most_uartIo_dsr(uart1_dsr),
+  .most_uartIo_rts(uart1_rts),
+  .most_uartIo_cts(uart1_cts),
+
   .clk(
     //my_clk
     clk_sys
@@ -304,57 +331,57 @@ MeltedMoon myMeltedMoon(
 );
 
 //always @(posedge clk_sys) begin
-//	if(scandouble) ce_pix <= 1;
-//		else ce_pix <= ~ce_pix;
+//  if(scandouble) ce_pix <= 1;
+//    else ce_pix <= ~ce_pix;
 //
-//	if(reset) begin
-//		hc <= 0;
-//		vc <= 0;
-//	end
-//	else if(ce_pix) begin
-//		if(hc == 637) begin
-//			hc <= 0;
-//			if(vc == (pal ? (scandouble ? 623 : 311) : (scandouble ? 523 : 261))) begin 
-//				vc <= 0;
-//				vvc <= vvc + 9'd6;
-//			end else begin
-//				vc <= vc + 1'd1;
-//			end
-//		end else begin
-//			hc <= hc + 1'd1;
-//		end
+//  if(reset) begin
+//    hc <= 0;
+//    vc <= 0;
+//  end
+//  else if(ce_pix) begin
+//    if(hc == 637) begin
+//      hc <= 0;
+//      if(vc == (pal ? (scandouble ? 623 : 311) : (scandouble ? 523 : 261))) begin 
+//        vc <= 0;
+//        vvc <= vvc + 9'd6;
+//      end else begin
+//        vc <= vc + 1'd1;
+//      end
+//    end else begin
+//      hc <= hc + 1'd1;
+//    end
 //
-//		//rnd1 <= rnd;
-//		//rnd_reg1 <= {32'd0, cpu_io_regFileWriteData_sys_reg}; //{cpu_io_regFileWriteData, rnd[63:32]};
-//		rnd_reg1 <= rnd;
-//		rnd_reg <= rnd_reg1;
-//	end
+//    //rnd1 <= rnd;
+//    //rnd_reg1 <= {32'd0, cpu_io_regFileWriteData_sys_reg}; //{cpu_io_regFileWriteData, rnd[63:32]};
+//    rnd_reg1 <= rnd;
+//    rnd_reg <= rnd_reg1;
+//  end
 //end
 //
 //always @(posedge clk_sys) begin
-//	if (hc == 529) HBlank <= 1;
-//		else if (hc == 0) HBlank <= 0;
+//  if (hc == 529) HBlank <= 1;
+//    else if (hc == 0) HBlank <= 0;
 //
-//	if (hc == 544) begin
-//		HSync <= 1;
+//  if (hc == 544) begin
+//    HSync <= 1;
 //
-//		if(pal) begin
-//			if(vc == (scandouble ? 609 : 304)) VSync <= 1;
-//				else if (vc == (scandouble ? 617 : 308)) VSync <= 0;
+//    if(pal) begin
+//      if(vc == (scandouble ? 609 : 304)) VSync <= 1;
+//        else if (vc == (scandouble ? 617 : 308)) VSync <= 0;
 //
-//			if(vc == (scandouble ? 601 : 300)) VBlank <= 1;
-//				else if (vc == 0) VBlank <= 0;
-//		end
-//		else begin
-//			if(vc == (scandouble ? 490 : 245)) VSync <= 1;
-//				else if (vc == (scandouble ? 496 : 248)) VSync <= 0;
+//      if(vc == (scandouble ? 601 : 300)) VBlank <= 1;
+//        else if (vc == 0) VBlank <= 0;
+//    end
+//    else begin
+//      if(vc == (scandouble ? 490 : 245)) VSync <= 1;
+//        else if (vc == (scandouble ? 496 : 248)) VSync <= 0;
 //
-//			if(vc == (scandouble ? 480 : 240)) VBlank <= 1;
-//				else if (vc == 0) VBlank <= 0;
-//		end
-//	end
-//	
-//	if (hc == 590) HSync <= 0;
+//      if(vc == (scandouble ? 480 : 240)) VBlank <= 1;
+//        else if (vc == 0) VBlank <= 0;
+//    end
+//  end
+//  
+//  if (hc == 590) HSync <= 0;
 //end
 //
 //reg  [7:0] cos_out;

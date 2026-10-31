@@ -18,166 +18,166 @@
 
 module emu
 (
-	//Master input clock
-	input         CLK_50M,
+  //Master input clock
+  input         CLK_50M,
 
-	//Async reset from top-level module.
-	//Can be used as initial reset.
-	input         RESET,
+  //Async reset from top-level module.
+  //Can be used as initial reset.
+  input         RESET,
 
-	//Must be passed to hps_io module
-	inout  [48:0] HPS_BUS,
+  //Must be passed to hps_io module
+  inout  [48:0] HPS_BUS,
 
-	//Base video clock. Usually equals to CLK_SYS.
-	output        CLK_VIDEO,
+  //Base video clock. Usually equals to CLK_SYS.
+  output        CLK_VIDEO,
 
-	//Multiple resolutions are supported using different CE_PIXEL rates.
-	//Must be based on CLK_VIDEO
-	output        CE_PIXEL,
+  //Multiple resolutions are supported using different CE_PIXEL rates.
+  //Must be based on CLK_VIDEO
+  output        CE_PIXEL,
 
-	//Video aspect ratio for HDMI. Most retro systems have ratio 4:3.
-	//if VIDEO_ARX[12] or VIDEO_ARY[12] is set then [11:0] contains scaled size instead of aspect ratio.
-	output [12:0] VIDEO_ARX,
-	output [12:0] VIDEO_ARY,
+  //Video aspect ratio for HDMI. Most retro systems have ratio 4:3.
+  //if VIDEO_ARX[12] or VIDEO_ARY[12] is set then [11:0] contains scaled size instead of aspect ratio.
+  output [12:0] VIDEO_ARX,
+  output [12:0] VIDEO_ARY,
 
-	output  [7:0] VGA_R,
-	output  [7:0] VGA_G,
-	output  [7:0] VGA_B,
-	output        VGA_HS,
-	output        VGA_VS,
-	output        VGA_DE,    // = ~(VBlank | HBlank)
-	output        VGA_F1,
-	output [1:0]  VGA_SL,
-	output        VGA_SCALER, // Force VGA scaler
-	output        VGA_DISABLE, // analog out is off
+  output  [7:0] VGA_R,
+  output  [7:0] VGA_G,
+  output  [7:0] VGA_B,
+  output        VGA_HS,
+  output        VGA_VS,
+  output        VGA_DE,    // = ~(VBlank | HBlank)
+  output        VGA_F1,
+  output [1:0]  VGA_SL,
+  output        VGA_SCALER, // Force VGA scaler
+  output        VGA_DISABLE, // analog out is off
 
-	input  [11:0] HDMI_WIDTH,
-	input  [11:0] HDMI_HEIGHT,
-	output        HDMI_FREEZE,
-	output        HDMI_BLACKOUT,
-	output        HDMI_BOB_DEINT,
+  input  [11:0] HDMI_WIDTH,
+  input  [11:0] HDMI_HEIGHT,
+  output        HDMI_FREEZE,
+  output        HDMI_BLACKOUT,
+  output        HDMI_BOB_DEINT,
 
 `ifdef MISTER_FB
-	// Use framebuffer in DDRAM
-	// FB_FORMAT:
-	//    [2:0] : 011=8bpp(palette) 100=16bpp 101=24bpp 110=32bpp
-	//    [3]   : 0=16bits 565 1=16bits 1555
-	//    [4]   : 0=RGB  1=BGR (for 16/24/32 modes)
-	//
-	// FB_STRIDE either 0 (rounded to 256 bytes) or multiple of pixel size (in bytes)
-	output        FB_EN,
-	output  [4:0] FB_FORMAT,
-	output [11:0] FB_WIDTH,
-	output [11:0] FB_HEIGHT,
-	output [31:0] FB_BASE,
-	output [13:0] FB_STRIDE,
-	input         FB_VBL,
-	input         FB_LL,
-	output        FB_FORCE_BLANK,
+  // Use framebuffer in DDRAM
+  // FB_FORMAT:
+  //    [2:0] : 011=8bpp(palette) 100=16bpp 101=24bpp 110=32bpp
+  //    [3]   : 0=16bits 565 1=16bits 1555
+  //    [4]   : 0=RGB  1=BGR (for 16/24/32 modes)
+  //
+  // FB_STRIDE either 0 (rounded to 256 bytes) or multiple of pixel size (in bytes)
+  output        FB_EN,
+  output  [4:0] FB_FORMAT,
+  output [11:0] FB_WIDTH,
+  output [11:0] FB_HEIGHT,
+  output [31:0] FB_BASE,
+  output [13:0] FB_STRIDE,
+  input         FB_VBL,
+  input         FB_LL,
+  output        FB_FORCE_BLANK,
 
 `ifdef MISTER_FB_PALETTE
-	// Palette control for 8bit modes.
-	// Ignored for other video modes.
-	output        FB_PAL_CLK,
-	output  [7:0] FB_PAL_ADDR,
-	output [23:0] FB_PAL_DOUT,
-	input  [23:0] FB_PAL_DIN,
-	output        FB_PAL_WR,
+  // Palette control for 8bit modes.
+  // Ignored for other video modes.
+  output        FB_PAL_CLK,
+  output  [7:0] FB_PAL_ADDR,
+  output [23:0] FB_PAL_DOUT,
+  input  [23:0] FB_PAL_DIN,
+  output        FB_PAL_WR,
 `endif
 `endif
 
-	output        LED_USER,  // 1 - ON, 0 - OFF.
+  output        LED_USER,  // 1 - ON, 0 - OFF.
 
-	// b[1]: 0 - LED status is system status OR'd with b[0]
-	//       1 - LED status is controled solely by b[0]
-	// hint: supply 2'b00 to let the system control the LED.
-	output  [1:0] LED_POWER,
-	output  [1:0] LED_DISK,
+  // b[1]: 0 - LED status is system status OR'd with b[0]
+  //       1 - LED status is controled solely by b[0]
+  // hint: supply 2'b00 to let the system control the LED.
+  output  [1:0] LED_POWER,
+  output  [1:0] LED_DISK,
 
-	// I/O board button press simulation (active high)
-	// b[1]: user button
-	// b[0]: osd button
-	output  [1:0] BUTTONS,
+  // I/O board button press simulation (active high)
+  // b[1]: user button
+  // b[0]: osd button
+  output  [1:0] BUTTONS,
 
-	input         CLK_AUDIO, // 24.576 MHz
-	output [15:0] AUDIO_L,
-	output [15:0] AUDIO_R,
-	output        AUDIO_S,   // 1 - signed audio samples, 0 - unsigned
-	output  [1:0] AUDIO_MIX, // 0 - no mix, 1 - 25%, 2 - 50%, 3 - 100% (mono)
+  input         CLK_AUDIO, // 24.576 MHz
+  output [15:0] AUDIO_L,
+  output [15:0] AUDIO_R,
+  output        AUDIO_S,   // 1 - signed audio samples, 0 - unsigned
+  output  [1:0] AUDIO_MIX, // 0 - no mix, 1 - 25%, 2 - 50%, 3 - 100% (mono)
 
-	//ADC
-	inout   [3:0] ADC_BUS,
+  //ADC
+  inout   [3:0] ADC_BUS,
 
-	//SD-SPI
-	output        SD_SCK,
-	output        SD_MOSI,
-	input         SD_MISO,
-	output        SD_CS,
-	input         SD_CD,
+  //SD-SPI
+  output        SD_SCK,
+  output        SD_MOSI,
+  input         SD_MISO,
+  output        SD_CS,
+  input         SD_CD,
 
-	//High latency DDR3 RAM interface
-	//Use for non-critical time purposes
-	output        DDRAM_CLK,
-	input         DDRAM_BUSY,
-	output  [7:0] DDRAM_BURSTCNT,
-	output [28:0] DDRAM_ADDR,
-	input  [63:0] DDRAM_DOUT,
-	input         DDRAM_DOUT_READY,
-	output        DDRAM_RD,
-	output [63:0] DDRAM_DIN,
-	output  [7:0] DDRAM_BE,
-	output        DDRAM_WE,
+  //High latency DDR3 RAM interface
+  //Use for non-critical time purposes
+  output        DDRAM_CLK,
+  input         DDRAM_BUSY,
+  output  [7:0] DDRAM_BURSTCNT,
+  output [28:0] DDRAM_ADDR,
+  input  [63:0] DDRAM_DOUT,
+  input         DDRAM_DOUT_READY,
+  output        DDRAM_RD,
+  output [63:0] DDRAM_DIN,
+  output  [7:0] DDRAM_BE,
+  output        DDRAM_WE,
 
-	//SDRAM interface with lower latency
-	output        SDRAM_CLK,
-	output        SDRAM_CKE,
-	output [12:0] SDRAM_A,
-	output  [1:0] SDRAM_BA,
-	inout  [15:0] SDRAM_DQ,
-	output        SDRAM_DQML,
-	output        SDRAM_DQMH,
-	output        SDRAM_nCS,
-	output        SDRAM_nCAS,
-	output        SDRAM_nRAS,
-	output        SDRAM_nWE,
+  //SDRAM interface with lower latency
+  output        SDRAM_CLK,
+  output        SDRAM_CKE,
+  output [12:0] SDRAM_A,
+  output  [1:0] SDRAM_BA,
+  inout  [15:0] SDRAM_DQ,
+  output        SDRAM_DQML,
+  output        SDRAM_DQMH,
+  output        SDRAM_nCS,
+  output        SDRAM_nCAS,
+  output        SDRAM_nRAS,
+  output        SDRAM_nWE,
 
 `ifdef MISTER_DUAL_SDRAM
-	//Secondary SDRAM
-	//Set all output SDRAM_* signals to Z ASAP if SDRAM2_EN is 0
-	input         SDRAM2_EN,
-	output        SDRAM2_CLK,
-	output [12:0] SDRAM2_A,
-	output  [1:0] SDRAM2_BA,
-	inout  [15:0] SDRAM2_DQ,
-	output        SDRAM2_nCS,
-	output        SDRAM2_nCAS,
-	output        SDRAM2_nRAS,
-	output        SDRAM2_nWE,
+  //Secondary SDRAM
+  //Set all output SDRAM_* signals to Z ASAP if SDRAM2_EN is 0
+  input         SDRAM2_EN,
+  output        SDRAM2_CLK,
+  output [12:0] SDRAM2_A,
+  output  [1:0] SDRAM2_BA,
+  inout  [15:0] SDRAM2_DQ,
+  output        SDRAM2_nCS,
+  output        SDRAM2_nCAS,
+  output        SDRAM2_nRAS,
+  output        SDRAM2_nWE,
 `endif
 
-	input         UART_CTS,
-	output        UART_RTS,
-	input         UART_RXD,
-	output        UART_TXD,
-	output        UART_DTR,
-	input         UART_DSR,
+  input         UART_CTS,
+  output        UART_RTS,
+  input         UART_RXD,
+  output        UART_TXD,
+  output        UART_DTR,
+  input         UART_DSR,
 
-	// Open-drain User port.
-	// 0 - D+/RX
-	// 1 - D-/TX
-	// 2..6 - USR2..USR6
-	// Set USER_OUT to 1 to read from USER_IN.
-	input   [6:0] USER_IN,
-	output  [6:0] USER_OUT,
+  // Open-drain User port.
+  // 0 - D+/RX
+  // 1 - D-/TX
+  // 2..6 - USR2..USR6
+  // Set USER_OUT to 1 to read from USER_IN.
+  input   [6:0] USER_IN,
+  output  [6:0] USER_OUT,
 
-	input         OSD_STATUS
+  input         OSD_STATUS
 );
 
 ///////// Default values for ports not used in this core /////////
 
 assign ADC_BUS  = 'Z;
 assign USER_OUT = '1;
-assign {UART_RTS, UART_TXD, UART_DTR} = 0;
+//assign {UART_RTS, UART_TXD, UART_DTR} = 0;
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 //assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
 //assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = '0;  
@@ -208,34 +208,34 @@ assign BUTTONS = 0;
 //
 //`include "build_id.v" 
 //localparam CONF_STR = {
-//	"MyCore;;",
-//	"-;",
-//	"O[122:121],Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
-//	"O[2],TV Mode,NTSC,PAL;",
-//	"O[4:3],Noise,White,Red,Green,Blue;",
-//	"-;",
-//	"P1,Test Page 1;",
-//	"P1-;",
-//	"P1-, -= Options in page 1 =-;",
-//	"P1-;",
-//	"P1O[5],Option 1-1,Off,On;",
-//	"d0P1F1,BIN;",
-//	"H0P1O[10],Option 1-2,Off,On;",
-//	"-;",
-//	"P2,Test Page 2;",
-//	"P2-;",
-//	"P2-, -= Options in page 2 =-;",
-//	"P2-;",
-//	"P2S0,DSK;",
-//	"P2O[7:6],Option 2,1,2,3,4;",
-//	"-;",
-//	"-;",
-//	"T[0],Reset;",
-//	"R[0],Reset and close OSD;",
-//	"v,0;", // [optional] config version 0-99. 
-//	        // If CONF_STR options are changed in incompatible way, then change version number too,
-//			  // so all options will get default values on first start.
-//	"V,v",`BUILD_DATE 
+//  "MyCore;;",
+//  "-;",
+//  "O[122:121],Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
+//  "O[2],TV Mode,NTSC,PAL;",
+//  "O[4:3],Noise,White,Red,Green,Blue;",
+//  "-;",
+//  "P1,Test Page 1;",
+//  "P1-;",
+//  "P1-, -= Options in page 1 =-;",
+//  "P1-;",
+//  "P1O[5],Option 1-1,Off,On;",
+//  "d0P1F1,BIN;",
+//  "H0P1O[10],Option 1-2,Off,On;",
+//  "-;",
+//  "P2,Test Page 2;",
+//  "P2-;",
+//  "P2-, -= Options in page 2 =-;",
+//  "P2-;",
+//  "P2S0,DSK;",
+//  "P2O[7:6],Option 2,1,2,3,4;",
+//  "-;",
+//  "-;",
+//  "T[0],Reset;",
+//  "R[0],Reset and close OSD;",
+//  "v,0;", // [optional] config version 0-99. 
+//          // If CONF_STR options are changed in incompatible way, then change version number too,
+//        // so all options will get default values on first start.
+//  "V,v",`BUILD_DATE 
 //};
 wire [1:0] ar = status[122:121];
 
@@ -244,37 +244,39 @@ assign VIDEO_ARY = (!ar) ? 12'd3 : 12'd0;
 
 `include "build_id.v" 
 localparam CONF_STR = {
-	"MeltedMoon;;",
-	"-;",
-	"F1,BIN;",
-	"-;",
-	"O[122:121],Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
-	"O[2],TV Mode,NTSC,PAL;",
-	"O[4:3],Noise,White,Red,Green,Blue;",
-	"-;",
-	"P1,Test Page 1;",
-	"P1-;",
-	"P1-, -= Options in page 1 =-;",
-	"P1-;",
-	"P1O[5],Option 1-1,Off,On;",
-	"d0P1F2,BIN;",
-	"H0P1O[10],Option 1-2,Off,On;",
-	"-;",
-	"P2,Test Page 2;",
-	"P2-;",
-	"P2-, -= Options in page 2 =-;",
-	"P2-;",
-	"P2S0,DSK;",
-	"P2O[7:6],Option 2,1,2,3,4;",
-	"-;",
-	"-;",
-	"T[0],Reset;",
-	"R[0],Reset and close OSD;",
-	"v,0;", // [optional] config version 0-99. 
-	        // If CONF_STR options are changed in incompatible way, then change version number too,
-			  // so all options will get default values on first start.
-	"J1,A,B,X,Y,LT,RT,Select,Start;",
-	"V,v",`BUILD_DATE 
+  //"MeltedMoon;UART115200:230400;",
+  "MeltedMoon;UART115200:115200;",
+  //"MeltedMoon;UART57600:57600;",
+  "-;",
+  "F1,BIN;",
+  "-;",
+  "O[122:121],Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
+  "O[2],TV Mode,NTSC,PAL;",
+  "O[4:3],Noise,White,Red,Green,Blue;",
+  "-;",
+  "P1,Test Page 1;",
+  "P1-;",
+  "P1-, -= Options in page 1 =-;",
+  "P1-;",
+  "P1O[5],Option 1-1,Off,On;",
+  "d0P1F2,BIN;",
+  "H0P1O[10],Option 1-2,Off,On;",
+  "-;",
+  "P2,Test Page 2;",
+  "P2-;",
+  "P2-, -= Options in page 2 =-;",
+  "P2-;",
+  "P2S0,DSK;",
+  "P2O[7:6],Option 2,1,2,3,4;",
+  "-;",
+  "-;",
+  "T[0],Reset;",
+  "R[0],Reset and close OSD;",
+  "v,0;", // [optional] config version 0-99. 
+          // If CONF_STR options are changed in incompatible way, then change version number too,
+        // so all options will get default values on first start.
+  "J1,A,B,X,Y,LT,RT,Select,Start;",
+  "V,v",`BUILD_DATE 
 };
 
 
@@ -309,28 +311,31 @@ wire [31:0] joystick_3;
 wire [31:0] joystick_4;
 wire [31:0] joystick_5;
 
+wire[7:0] uart1_mode;
+wire [31:0] uart1_speed;
+
 hps_io #(.CONF_STR(CONF_STR), .WIDE(IOCTL_WIDE)) hps_io
 (
-	.clk_sys(clk_sys),
-	.HPS_BUS(HPS_BUS),
+  .clk_sys(clk_sys),
+  .HPS_BUS(HPS_BUS),
 
-	.EXT_BUS(),
-	.gamma_bus(),
+  .EXT_BUS(),
+  .gamma_bus(),
 
-	.joystick_0(joystick_0),
-	.joystick_1(joystick_1),
-	.joystick_2(joystick_2),
-	.joystick_3(joystick_3),
-	.joystick_4(joystick_4),
-	.joystick_5(joystick_5),
+  .joystick_0(joystick_0),
+  .joystick_1(joystick_1),
+  .joystick_2(joystick_2),
+  .joystick_3(joystick_3),
+  .joystick_4(joystick_4),
+  .joystick_5(joystick_5),
 
-	.forced_scandoubler(forced_scandoubler),
+  .forced_scandoubler(forced_scandoubler),
 
-	.buttons(buttons),
-	.status(status),
-	.status_menumask({status[5]}),
-	
-	.ps2_key(ps2_key),
+  .buttons(buttons),
+  .status(status),
+  .status_menumask({status[5]}),
+  
+  .ps2_key(ps2_key),
   .ioctl_download(ioctl_download),
   .ioctl_index(ioctl_index),
   .ioctl_wr(ioctl_wr),
@@ -342,9 +347,44 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(IOCTL_WIDE)) hps_io
   .ioctl_din(ioctl_din),
   .ioctl_rd(ioctl_rd),
   .ioctl_file_ext(ioctl_file_ext),
-  .ioctl_wait(ioctl_wait)
-	//.*
+  .ioctl_wait(ioctl_wait),
+
+  .uart_mode(uart1_mode),
+  .uart_speed(uart1_speed)
+
+  //.*
 );
+
+/// UART1
+
+wire uart1_cts, uart1_dsr, uart1_rts, uart1_dtr;
+wire uart1_tx, uart1_rx;
+//wire mpu_tx, mpu_rx;
+
+//wire hps_mpu = (uart1_mode >= 3);
+
+//assign UART_RTS  = ~hps_mpu & uart1_rts;
+//assign UART_DTR  = ~hps_mpu & uart1_dtr;
+//assign uart1_cts = ~hps_mpu & UART_CTS;
+////assign uart1_dcd = ~hps_mpu & UART_DSR;
+//assign uart1_dsr = ~hps_mpu & UART_DSR;
+//assign uart1_rx  = UART_RXD;//~hps_mpu & UART_RXD;
+////assign mpu_rx    = ~hps_mpu & UART_RXD;//? midi_rx : UART_RXD;
+//assign UART_TXD  = uart1_tx;//~hps_mpu & uart1_tx;// : (mpu_tx & ~mt32_use);
+
+//assign UART_RTS  = uart1_rts; //1'b0;//uart1_rts;
+//assign UART_DTR  = uart1_dtr; //1'b0;//uart1_dtr;
+//assign uart1_cts = UART_CTS;  //1'b1;//UART_CTS;
+//assign uart1_dsr = UART_DSR;  //1'b1;//UART_DSR;
+//assign uart1_rx  = UART_RXD;
+//assign UART_TXD  = uart1_tx;
+
+assign UART_RTS  = uart1_rts;//1'b0;//uart1_rts;
+assign UART_DTR  = uart1_dtr;//1'b0;//uart1_dtr;
+assign uart1_cts = UART_CTS;//1'b1;//UART_CTS;
+assign uart1_dsr = UART_DSR;//1'b1;//UART_DSR;
+assign uart1_rx  = UART_RXD;
+assign UART_TXD  = uart1_tx;
 
 ///////////////////////   CLOCKS   ///////////////////////////////
 
@@ -360,15 +400,15 @@ wire clk_sys;
 wire pll_locked;
 pll pll
 (
-	.refclk(CLK_50M),
-	.rst(0),
-	.outclk_0(clk_sys),
-	//.outclk_1(clk_vga),
-	//.outclk_1(
-	//  //clk_cpu
-	//  vgaClk_clk
-	//)
-	.locked(pll_locked)
+  .refclk(CLK_50M),
+  .rst(0),
+  .outclk_0(clk_sys),
+  //.outclk_1(clk_vga),
+  //.outclk_1(
+  //  //clk_cpu
+  //  vgaClk_clk
+  //)
+  .locked(pll_locked)
 );
 
 
@@ -394,13 +434,13 @@ wire reset = reset_main; //|| my_ioctl_download_rose;
 //wire reset = reset_main || my_ioctl_download_rose;
 //pll_test pll_test
 //(
-//	.refclk(CLK_50M),
-//	.rst(0),
-//	.outclk_0(clk_sys)//,
-//	//.outclk_1(
-//	//  //clk_cpu
-//	//  vgaClk_clk
-//	//)
+//  .refclk(CLK_50M),
+//  .rst(0),
+//  .outclk_0(clk_sys)//,
+//  //.outclk_1(
+//  //  //clk_cpu
+//  //  vgaClk_clk
+//  //)
 //);
 
 
@@ -416,31 +456,31 @@ wire [1:0] col = status[4:3];
 melted_moon my_melted_moon
 (
   .clk_50m(CLK_50M),
-	.clk_sys(clk_sys),
-	//.clk_vga(clk_vga),
-	//.vgaClk_clk(vgaClk_clk),
-	//.clk_cpu(clk_cpu),
-	.reset(reset),
+  .clk_sys(clk_sys),
+  //.clk_vga(clk_vga),
+  //.vgaClk_clk(vgaClk_clk),
+  //.clk_cpu(clk_cpu),
+  .reset(reset),
 
-	.joystick_0(joystick_0),
-	.joystick_1(joystick_1),
-	.joystick_2(joystick_2),
-	.joystick_3(joystick_3),
-	.joystick_4(joystick_4),
-	.joystick_5(joystick_5),
-	
-	.pal(status[2]),
-	.scandouble(forced_scandoubler),
-	.pll_locked(pll_locked),
+  .joystick_0(joystick_0),
+  .joystick_1(joystick_1),
+  .joystick_2(joystick_2),
+  .joystick_3(joystick_3),
+  .joystick_4(joystick_4),
+  .joystick_5(joystick_5),
+  
+  .pal(status[2]),
+  .scandouble(forced_scandoubler),
+  .pll_locked(pll_locked),
 
-	//.ce_pix(ce_pix),
+  //.ce_pix(ce_pix),
 
-	//.HBlank(HBlank),
-	//.HSync(HSync),
-	//.VBlank(VBlank),
-	//.VSync(VSync),
+  //.HBlank(HBlank),
+  //.HSync(HSync),
+  //.VBlank(VBlank),
+  //.VSync(VSync),
 
-	//.video(video),
+  //.video(video),
 
   .vgaPhys_col_r(VGA_R),
   .vgaPhys_col_g(VGA_G),
@@ -450,48 +490,55 @@ melted_moon my_melted_moon
   .vgaPixelEn(CE_PIXEL),
   .vgaVisib(VGA_DE),
 
-	// ARM -> FPGA download
-	.ioctl_download(ioctl_download),
-	  // signal indicating an active download
-	.ioctl_index(ioctl_index),
-	  // menu index used to upload the file
-	.ioctl_wr(ioctl_wr),
-	.ioctl_addr(ioctl_addr),
-	  // in WIDE mode address will be incremented by 2
-	.ioctl_dout(ioctl_dout),
-	.ioctl_upload(ioctl_upload),
-	  // signal indicating an active upload
+  // ARM -> FPGA download
+  .ioctl_download(ioctl_download),
+    // signal indicating an active download
+  .ioctl_index(ioctl_index),
+    // menu index used to upload the file
+  .ioctl_wr(ioctl_wr),
+  .ioctl_addr(ioctl_addr),
+    // in WIDE mode address will be incremented by 2
+  .ioctl_dout(ioctl_dout),
+  .ioctl_upload(ioctl_upload),
+    // signal indicating an active upload
 
-	.ioctl_upload_req(ioctl_upload_req),
-	  // request to save (must be supported on HPS side for specific core)
-	.ioctl_upload_index(ioctl_upload_index),
-	.ioctl_din(ioctl_din),
-	.ioctl_rd(ioctl_rd),
-	.ioctl_file_ext(ioctl_file_ext),
-	.ioctl_wait(ioctl_wait),
+  .ioctl_upload_req(ioctl_upload_req),
+    // request to save (must be supported on HPS side for specific core)
+  .ioctl_upload_index(ioctl_upload_index),
+  .ioctl_din(ioctl_din),
+  .ioctl_rd(ioctl_rd),
+  .ioctl_file_ext(ioctl_file_ext),
+  .ioctl_wait(ioctl_wait),
 
-	.sdram_CLK(SDRAM_CLK),
-	.sdram_CKE(SDRAM_CKE),
-	.sdram_A(SDRAM_A),
-	.sdram_BA(SDRAM_BA),
-	.sdram_DQ(SDRAM_DQ),
-	.sdram_DQML(SDRAM_DQML),
-	.sdram_DQMH(SDRAM_DQMH),
-	.sdram_nCS(SDRAM_nCS),
-	.sdram_nCAS(SDRAM_nCAS),
-	.sdram_nRAS(SDRAM_nRAS),
-	.sdram_nWE(SDRAM_nWE),
+  .sdram_CLK(SDRAM_CLK),
+  .sdram_CKE(SDRAM_CKE),
+  .sdram_A(SDRAM_A),
+  .sdram_BA(SDRAM_BA),
+  .sdram_DQ(SDRAM_DQ),
+  .sdram_DQML(SDRAM_DQML),
+  .sdram_DQMH(SDRAM_DQMH),
+  .sdram_nCS(SDRAM_nCS),
+  .sdram_nCAS(SDRAM_nCAS),
+  .sdram_nRAS(SDRAM_nRAS),
+  .sdram_nWE(SDRAM_nWE),
 
-	.ddram_clk(DDRAM_CLK),
-	.ddram_busy(DDRAM_BUSY),
-	.ddram_burstCnt(DDRAM_BURSTCNT),
-	.ddram_addr(DDRAM_ADDR),
-	.ddram_dout(DDRAM_DOUT),
-	.ddram_doutReady(DDRAM_DOUT_READY),
-	.ddram_rd(DDRAM_RD),
-	.ddram_din(DDRAM_DIN),
-	.ddram_be(DDRAM_BE),
-	.ddram_we(DDRAM_WE)
+  .ddram_clk(DDRAM_CLK),
+  .ddram_busy(DDRAM_BUSY),
+  .ddram_burstCnt(DDRAM_BURSTCNT),
+  .ddram_addr(DDRAM_ADDR),
+  .ddram_dout(DDRAM_DOUT),
+  .ddram_doutReady(DDRAM_DOUT_READY),
+  .ddram_rd(DDRAM_RD),
+  .ddram_din(DDRAM_DIN),
+  .ddram_be(DDRAM_BE),
+  .ddram_we(DDRAM_WE),
+
+  .uart1_cts(uart1_cts),
+  .uart1_rts(uart1_rts),
+  //.uart1_rx(uart1_rx),
+  .uart1_tx(uart1_tx),
+  .uart1_dtr(uart1_dtr),
+  .uart1_dsr(uart1_dsr)
 );
 
 assign CLK_VIDEO = clk_sys;//clk_vga; //clk_sys;
@@ -520,12 +567,12 @@ assign CLK_VIDEO = clk_sys;//clk_vga; //clk_sys;
 //wire [7:0] video;
 //
 //arcade_video #(
-//	.WIDTH(ARCVID_WIDTH),
-//	.DW(ARCVID_DW)
+//  .WIDTH(ARCVID_WIDTH),
+//  .DW(ARCVID_DW)
 //) my_arcade_video(
-//	.clk_video(clk_sys),
-//	.ce_pix(ce_pix),
-//	.RGB_in
+//  .clk_video(clk_sys),
+//  .ce_pix(ce_pix),
+//  .RGB_in
 //);
 
 endmodule

@@ -6,6 +6,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <ranges>
 #include <vector>
 #include <cstring>
 #include <cstdio>
@@ -25,11 +26,12 @@
 #include "liborangepower_src/sdl2/sdl_render.hpp"
 #include "liborangepower_src/sdl2/sdl_surface.hpp"
 #include "liborangepower_src/sdl2/sdl_rect.hpp"
-#include <SDL_events.h>
 #include "liborangepower_src/misc/misc_output_funcs.hpp"
+#include <SDL_events.h>
 //#include "VMeltedMoon.h"
 //#include "VMeltedMoon.h"
-#include "VMeltedMoonSimDut.h"
+//#include "VMeltedMoonSimDut.h"
+#include "VMainSv.h"
 #include "verilated_vcd_c.h"
 #include "verilated_fst_c.h"
 //#include <unistd.h>
@@ -38,5 +40,10 @@
 using namespace liborangepower::misc_output;
 using namespace liborangepower::integer_types;
 using namespace liborangepower::strings;
+using liborangepower::misc_output::printout;
+using liborangepower::misc_output::printerr;
+
+#include "liborangepower_src/only_opt_arg_parser_class.hpp"
+using namespace liborangepower::arg_parse;
 
 #endif      // MISC_INCLUDES_HPP

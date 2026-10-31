@@ -30,7 +30,7 @@ PROJ:=$(shell basename $(CURDIR))$(DEBUG_SUFFIX)
 
 # Compilers and initial compiler flags
 CXX:=$(PREFIX)g++
-CXX_FLAGS:=$(CXX_FLAGS) -std=c++23 -fcoroutines -fmodules-ts -Wall \
+CXX_FLAGS:=$(CXX_FLAGS) -std=c++26 -freflection -fcoroutines -fmodules-ts -Wall \
 	$(shell pkg-config --cflags sdl2)
 
 ifdef DEBUG
@@ -94,7 +94,7 @@ V_SOURCES := \
 	$(foreach DIR,$(V_DIRS),$(wildcard $(DIR)/*.v)) \
 	$(foreach DIR,$(V_DIRS),$(wildcard $(DIR)/*.sv))
 
-V_TOP:=MeltedMoonSimDut#MeltedMoon#SnowHouseCpuFramebufferDemo#Gpu2dSimDut#Gpu2d#Gpu2dSimDut
+V_TOP:=MainSv#MeltedMoonSimDut#MeltedMoon#SnowHouseCpuFramebufferDemo#Gpu2dSimDut#Gpu2d#Gpu2dSimDut
 VC_OUTLIB:=$(V_OBJDIR)/V$(V_TOP)__ALL.a
 VC_OUTMK:=V$(V_TOP).mk 
 
@@ -116,11 +116,32 @@ ifeq ($(RISCV_CPU_PROFILE),1)
     CXX_FLAGS:=-DRISCV_CPU_PROFILE=1 $(CXX_FLAGS)
 endif
 
+#ifeq ($(DO_SAVE_RESTORE),1)
+#    CXX_FLAGS:=-DDO_SAVE_RESTORE=1 $(CXX_FLAGS)
+#endif
+
 TRACE_THREADS:=#--trace-threads 2
 MY_THREADS:=1#4#1#2#4#1#2#24#2#1#16#1#4 #8
+#VC_FLAGS:=--cc -Wno-lint \
+#	--threads $(MY_THREADS) \
+#	--verilate-jobs $(VC_JOBS) \
+#	--savable \
+#	$(MY_TRACE) \
+#	$(TRACE_THREADS) \
+#	--top $(V_TOP) \
+#	$(VC_CFLAGS) \
+#	$(VC_LDFLAGS) \
+#	--Mdir $(V_OBJDIR) \
+#	$(V_SOURCES)
+
+#--timing
+#--timescale 1ps/1ps
+#--bbox-unsup
+
 VC_FLAGS:=--cc -Wno-lint \
 	--threads $(MY_THREADS) \
 	--verilate-jobs $(VC_JOBS) \
+	--savable \
 	$(MY_TRACE) \
 	$(TRACE_THREADS) \
 	--top $(V_TOP) \
@@ -135,7 +156,12 @@ CXX_SOURCES := \
 	$(VERILATOR_ROOT)/include/verilated.cpp \
 	$(VERILATOR_ROOT)/include/verilated_threads.cpp \
 	$(VERILATOR_ROOT)/include/verilated_fst_c.cpp \
-	$(VERILATOR_ROOT)/include/verilated_vcd_c.cpp
+	$(VERILATOR_ROOT)/include/verilated_vcd_c.cpp \
+	$(VERILATOR_ROOT)/include/verilated_save.cpp
+
+	#$(VERILATOR_ROOT)/include/verilated_timing.cpp \
+	#$(VERILATOR_ROOT)/include/verilated_cov.cpp \
+
 CXX_OFILES := $(CXX_SOURCES:%.cpp=$(OBJDIR)/%.o)
 CXX_PFILES := $(CXX_SOURCES:%.cpp=$(DEPDIR)/%.P)
 
